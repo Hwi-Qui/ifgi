@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IFGI — Panneau d'Administration</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0e3a63;--blue:#0f62ac;--blue-d:#0a4c86;--blue-100:#e3eef8;--blue-50:#f0f6fc;
+  --orange:#f97e0d;--orange-d:#e06c00;--orange-100:#fff1e2;
+  --bg:#f0f4f8;--white:#fff;--line:#dbe6f2;--muted:#5b7186;
+  --danger:#e53e3e;--success:#38a169;--warn:#dd6b20;
+  --sh:0 2px 12px rgba(13,59,102,.10);--sh-lg:0 8px 32px rgba(13,59,102,.16);
+  --sidebar:260px;--header:60px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Manrope',sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,h5{font-family:'Sora',sans-serif}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit}
+img{display:block;max-width:100%}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+
+/* ===================== LAYOUT ===================== */
+#app{display:flex;min-height:100vh}
+#sidebar{width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:.3s;overflow-y:auto;overflow-x:hidden}
+#sidebar.collapsed{width:68px}
+#sidebar.collapsed .nav-label,.sidebar-logo span,.sidebar-logo b,.user-info,.section-label{opacity:0;pointer-events:none;width:0;overflow:hidden}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}
+.sidebar-logo .logo-mark{width:36px;height:36px;background:var(--orange);border-radius:10px;display:grid;place-items:center;flex-shrink:0;font-family:'Sora';font-weight:800;font-size:14px;color:#fff}
+.sidebar-logo b{font-family:'Sora';font-weight:800;font-size:16px;color:#fff;white-space:nowrap}
+.sidebar-logo span{font-size:9.5px;color:rgba(255,255,255,.5);letter-spacing:1.4px;text-transform:uppercase;white-space:nowrap;display:block;margin-top:1px}
+.nav-section{padding:12px 10px 6px;flex-shrink:0}
+.section-label{font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:0 8px;margin-bottom:4px;white-space:nowrap;transition:.2s}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.22s;position:relative;white-space:nowrap}
+.nav-item:hover{background:rgba(255,255,255,.1)}
+.nav-item.active{background:var(--blue);box-shadow:0 6px 16px rgba(15,98,172,.5)}
+.nav-item .nav-icon{width:20px;height:20px;flex-shrink:0;display:grid;place-items:center;color:rgba(255,255,255,.65)}
+.nav-item.active .nav-icon{color:#fff}
+.nav-label{font-size:13.5px;font-weight:700;color:rgba(255,255,255,.75);transition:.2s;white-space:nowrap}
+.nav-item.active .nav-label{color:#fff}
+.nav-badge{margin-left:auto;background:var(--orange);color:#fff;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:14px 10px;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}
+.user-info{display:flex;flex-direction:column;padding:0 8px;overflow:hidden;transition:.2s}
+.user-info .u-name{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
+.user-info .u-role{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
+
+/* HEADER */
+#header{position:fixed;top:0;left:var(--sidebar);right:0;height:var(--header);background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 20px;z-index:100;transition:left .3s}
+#header.wide{left:68px}
+.h-toggle{width:36px;height:36px;border-radius:10px;background:var(--bg);border:none;display:grid;place-items:center;color:var(--ink);transition:.22s;flex-shrink:0}
+.h-toggle:hover{background:var(--blue-100);color:var(--blue)}
+.h-breadcrumb{font-size:14px;font-weight:700;color:var(--muted)}
+.h-breadcrumb b{color:var(--ink)}
+.h-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.h-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:10px;font-size:13px;font-weight:700;border:none;transition:.22s;cursor:pointer}
+.h-btn-blue{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(15,98,172,.3)}
+.h-btn-blue:hover{background:var(--blue-d);transform:translateY(-1px)}
+.h-btn-or{background:var(--orange);color:#fff;box-shadow:0 4px 12px rgba(249,126,13,.35)}
+.h-btn-or:hover{background:var(--orange-d);transform:translateY(-1px)}
+.h-btn-ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.h-btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.h-btn-danger{background:#fff0f0;color:var(--danger);border:1px solid #fed7d7}
+.h-btn-danger:hover{background:var(--danger);color:#fff}
+
+/* CONTENT */
+#content{margin-left:var(--sidebar);margin-top:var(--header);padding:28px;min-height:calc(100vh - var(--header));transition:margin-left .3s}
+#content.wide{margin-left:68px}
+.panel{display:none}.panel.active{display:block}
+
+/* ==================== CARDS ==================== */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;transition:.3s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg)}
+.stat-card .sc-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.stat-card .sc-val{font-family:'Sora';font-size:28px;font-weight:800;color:var(--ink)}
+.stat-card .sc-val.or{color:var(--orange)}
+.stat-card .sc-val.bl{color:var(--blue)}
+.stat-card .sc-val.gr{color:var(--success)}
+.stat-card .sc-sub{font-size:12px;color:var(--muted);margin-top:5px}
+.sc-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;float:right;margin-top:-4px}
+.sc-icon.bl{background:var(--blue-100);color:var(--blue)}
+.sc-icon.or{background:var(--orange-100);color:var(--orange-d)}
+.sc-icon.gr{background:#f0fff4;color:var(--success)}
+.sc-icon.re{background:#fff5f5;color:var(--danger)}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-header h3{font-size:15px;font-weight:700}
+.card-body{padding:20px}
+
+/* ==================== TABLE ==================== */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{padding:11px 14px;text-align:left;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--line);transition:.2s}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:var(--blue-50)}
+tbody td{padding:12px 14px;vertical-align:middle}
+.td-img{width:40px;height:40px;border-radius:10px;background:var(--blue-100);display:grid;place-items:center;overflow:hidden;flex-shrink:0}
+.td-img img{width:100%;height:100%;object-fit:cover}
+.td-flex{display:flex;align-items:center;gap:11px}
+.td-name{font-weight:700;font-size:14px}
+.td-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.badge-blue{background:var(--blue-100);color:var(--blue)}
+.badge-or{background:var(--orange-100);color:var(--orange-d)}
+.badge-gr{background:#f0fff4;color:var(--success)}
+.badge-re{background:#fff5f5;color:var(--danger)}
+.badge-muted{background:var(--bg);color:var(--muted)}
+.row-actions{display:flex;gap:6px}
+.act-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;transition:.2s;color:var(--muted)}
+.act-btn:hover.edit{border-color:var(--blue);background:var(--blue-100);color:var(--blue)}
+.act-btn:hover.del{border-color:var(--danger);background:#fff5f5;color:var(--danger)}
+.act-btn:hover.view{border-color:var(--success);background:#f0fff4;color:var(--success)}
+
+/* ==================== FORMS ==================== */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid.one{grid-template-columns:1fr}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg.span2{grid-column:span 2}
+.fg label{font-size:12.5px;font-weight:700;color:var(--ink)}
+.fg label span{color:var(--danger)}
+.fg input,.fg select,.fg textarea{padding:10px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;color:var(--ink);background:#fff;transition:.22s;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(15,98,172,.12)}
+.fg textarea{resize:vertical;min-height:90px}
+.fg .hint{font-size:11.5px;color:var(--muted)}
+.upload-zone{border:2px dashed var(--line);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:.22s;background:#fff}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-50)}
+.upload-zone input{display:none}
+.upload-zone .uz-icon{font-size:32px;margin-bottom:10px}
+.upload-zone p{font-size:13.5px;color:var(--muted);margin-top:5px}
+.upload-zone b{font-size:14px;color:var(--ink);font-weight:700}
+.preview-imgs{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.preview-img{position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.preview-img img{width:100%;height:100%;object-fit:cover}
+.preview-img .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;border:none;font-size:10px;cursor:pointer;display:grid;place-items:center}
+
+/* ==================== RICH EDITOR ==================== */
+.editor-wrap{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.editor-toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.tb-sep{width:1px;background:var(--line);margin:0 4px;align-self:stretch}
+.tb-btn{width:30px;height:30px;border-radius:7px;border:none;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--ink);font-size:13px;font-weight:700;transition:.18s;position:relative;flex-shrink:0}
+.tb-btn:hover{background:var(--blue-100);color:var(--blue)}
+.tb-btn.on{background:var(--blue);color:#fff}
+.tb-btn.danger:hover{background:#fff5f5;color:var(--danger)}
+.tb-select{padding:4px 8px;border:1.5px solid var(--line);border-radius:7px;font-size:12.5px;font-family:'Manrope',sans-serif;color:var(--ink);background:#fff;cursor:pointer;outline:none;height:30px}
+.tb-color{width:30px;height:30px;border-radius:7px;border:1.5px solid var(--line);cursor:pointer;padding:2px;background:#fff}
+.tb-color input[type=color]{width:100%;height:100%;border:none;cursor:pointer;border-radius:5px;padding:0}
+.editor-area{min-height:300px;padding:20px 24px;outline:none;font-size:15px;line-height:1.75;color:var(--ink);font-family:'Manrope',sans-serif}
+.editor-area:focus{box-shadow:none}
+.editor-area img{max-width:100%;border-radius:10px;margin:8px 0;cursor:pointer;border:2px solid transparent;transition:.2s}
+.editor-area img.selected,.editor-area iframe.selected{outline:2px solid var(--blue);border-radius:10px}
+.editor-area iframe{max-width:100%;border-radius:10px;margin:8px 0;border:1px solid var(--line);display:block}
+.editor-area table{border-collapse:collapse;width:100%;margin:12px 0}
+.editor-area table td,.editor-area table th{border:1.5px solid var(--line);padding:8px 12px;text-align:left}
+.editor-area table th{background:var(--blue-100);font-weight:700}
+.editor-area blockquote{border-left:4px solid var(--orange);padding:12px 18px;background:var(--orange-100);border-radius:0 10px 10px 0;margin:12px 0;color:var(--orange-d);font-style:italic}
+.editor-status{padding:8px 12px;background:var(--bg);border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;gap:16px}
+.editor-word-count{margin-left:auto}
+/* Resizable in editor */
+.editor-area img,.editor-area iframe{resize:both;overflow:auto}
+.resize-handle{display:inline-block;width:8px;height:8px;background:var(--blue);position:absolute;border-radius:2px;cursor:se-resize}
+
+/* ==================== MODALS ==================== */
+.modal-overlay{position:fixed;inset:0;background:rgba(14,58,99,.5);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(13,59,102,.28)}
+.modal.lg{max-width:900px}
+.modal.sm{max-width:420px}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:5;border-radius:20px 20px 0 0}
+.modal-head h3{font-size:17px;font-weight:800}
+.modal-close{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;display:grid;place-items:center;color:var(--muted);transition:.2s;font-size:16px}
+.modal-close:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.modal-body{padding:24px}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 20px 20px}
+
+/* ==================== GALLERY GRID ==================== */
+.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.gal-item{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:1;background:var(--blue-100);border:2px solid transparent;cursor:pointer;transition:.22s}
+.gal-item:hover{border-color:var(--blue);transform:scale(.98)}
+.gal-item.selected{border-color:var(--orange);box-shadow:0 0 0 3px rgba(249,126,13,.3)}
+.gal-item img,.gal-item video{width:100%;height:100%;object-fit:cover}
+.gal-item .gal-overlay{position:absolute;inset:0;background:rgba(14,58,99,.65);opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:.22s}
+.gal-item:hover .gal-overlay{opacity:1}
+.gal-item .gal-label{position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(14,58,99,.85));color:#fff;font-size:11.5px;font-weight:700;line-height:1.3}
+.gal-type{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.9);border-radius:7px;padding:3px 7px;font-size:10px;font-weight:800;color:var(--ink)}
+.gal-add{border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700;transition:.22s;aspect-ratio:1;border-radius:14px;cursor:pointer;background:#fff}
+.gal-add:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-50)}
+
+/* ==================== DRAG + DROP ==================== */
+.sortable-ghost{opacity:.4;background:var(--blue-100)!important;border:2px dashed var(--blue)!important}
+
+/* ==================== INLINE EDITABLE ==================== */
+.inline-edit-wrap{position:relative;border:2px dashed transparent;border-radius:10px;padding:4px;transition:.22s}
+.inline-edit-wrap:hover{border-color:var(--blue-100)}
+.inline-edit-wrap.editing{border-color:var(--blue);background:var(--blue-50)}
+.ie-toolbar{position:absolute;top:-36px;right:0;display:none;gap:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px;box-shadow:var(--sh)}
+.inline-edit-wrap:hover .ie-toolbar,.inline-edit-wrap.editing .ie-toolbar{display:flex}
+
+/* ==================== PAGE EDITOR ==================== */
+.page-blocks{display:flex;flex-direction:column;gap:12px}
+.page-block{background:#fff;border:1.5px solid var(--line);border-radius:14px;overflow:hidden;transition:.22s}
+.page-block:hover{border-color:var(--blue-100);box-shadow:var(--sh)}
+.pb-head{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none}
+.pb-head .pb-drag{color:var(--muted);cursor:grab}
+.pb-head h4{font-size:14px;font-weight:700;flex:1}
+.pb-head .pb-type{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--blue-100);color:var(--blue)}
+.pb-body{padding:16px;border-top:1px solid var(--line);display:none}
+.pb-body.open{display:block}
+.pb-actions{display:flex;gap:6px;align-items:center}
+
+/* ==================== TOAST ==================== */
+#toast-stack{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:1000}
+.toast-msg{background:var(--ink);color:#fff;border-radius:12px;padding:12px 18px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:10px;box-shadow:var(--sh-lg);animation:toastIn .3s ease;min-width:260px}
+.toast-msg.success{background:var(--success)}
+.toast-msg.error{background:var(--danger)}
+.toast-msg.warn{background:var(--warn)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+
+/* ==================== SWITCHES ==================== */
+.switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;background:#ccc;border-radius:999px;cursor:pointer;transition:.3s}
+.switch input:checked~.slider{background:var(--blue)}
+.switch .slider::before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+.switch input:checked~.slider::before{transform:translateX(18px)}
+
+/* ==================== TABS ==================== */
+.tabs{display:flex;gap:4px;padding:4px;background:var(--bg);border-radius:12px;margin-bottom:20px}
+.tab-btn{padding:8px 18px;border-radius:9px;border:none;background:transparent;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:.22s}
+.tab-btn.active{background:#fff;color:var(--ink);box-shadow:var(--sh)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* ==================== COLOR PICKER ==================== */
+.color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.color-swatch{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:.18s;flex-shrink:0}
+.color-swatch:hover,.color-swatch.active{border-color:var(--ink);transform:scale(1.12)}
+
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:900px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.mobile-open{transform:none}
+  #header,#content{left:0!important;margin-left:0!important}
+  #header{left:0}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .form-grid{grid-template-columns:1fr}
+  .fg.span2{grid-column:span 1}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr}
+  #content{padding:16px}
+}
+
+/* ==================== EXTRAS ==================== */
+.sep{height:1px;background:var(--line);margin:20px 0}
+.section-title{font-size:18px;font-weight:800;margin-bottom:16px}
+.flex-row{display:flex;align-items:center;gap:12px}
+.flex-row.wrap{flex-wrap:wrap}
+.flex-row.between{justify-content:space-between}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mt32{margin-top:32px}
+.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}.mb24{margin-bottom:24px}
+.text-muted{color:var(--muted);font-size:13px}
+.text-sm{font-size:12.5px}
+.fw7{font-weight:700}
+.w100{width:100%}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-state .es-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.empty-state h3{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.empty-state p{font-size:14px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:768px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* ==================== EMOJI PICKER ==================== */
+.emoji-picker{position:absolute;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:var(--sh-lg);z-index:50;width:280px;display:none}
+.emoji-picker.open{display:block}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:200px;overflow-y:auto}
+.emoji-btn{width:30px;height:30px;border:none;background:none;cursor:pointer;font-size:17px;border-radius:6px;transition:.15s;display:grid;place-items:center}
+.emoji-btn:hover{background:var(--blue-100)}
+
+/* ==================== IMAGE CROPPER PREVIEW ==================== */
+.crop-wrap{max-width:400px;margin:0 auto;background:var(--bg);border-radius:12px;overflow:hidden;position:relative}
+.crop-wrap img{width:100%;display:block}
+
+/* ==================== CONFIRM DIALOG ==================== */
+.confirm-dialog{background:#fff;border-radius:16px;padding:28px;text-align:center;max-width:380px}
+.confirm-dialog .cd-icon{font-size:36px;margin-bottom:14px}
+.confirm-dialog h3{font-size:17px;font-weight:800;margin-bottom:8px}
+.confirm-dialog p{font-size:14px;color:var(--muted);margin-bottom:20px}
+
+/* ==================== PROGRESS ==================== */
+.progress-bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--blue);border-radius:999px;transition:width .4s}
+.progress-fill.or{background:var(--orange)}
+.progress-fill.gr{background:var(--success)}
+
+/* NAV ACTIVE STATE */
+.nav-item[data-panel="dashboard"] svg path{stroke:rgba(255,255,255,.65)}
+
+/* SVG icons size */
+.ico16{width:16px;height:16px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0}
+.ico20{width:20px;height:20px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0}
+
+/* ==================== DRAGGABLE TIMELINE / SECTION ==================== */
+.timeline-editor .tl-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.timeline-editor .tl-row:last-child{border-bottom:0}
+.tl-drag-handle{padding:4px;cursor:grab;color:var(--muted)}
+.tl-fields{flex:1;display:grid;grid-template-columns:120px 1fr;gap:10px}
+
+/* ==================== SLIDER ALUMNI EDITOR ==================== */
+.alumni-cards{display:flex;flex-direction:column;gap:12px}
+.alumni-card{background:var(--bg);border-radius:12px;padding:14px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center}
+.alumni-av{width:50px;height:50px;border-radius:12px;background:var(--blue);display:grid;place-items:center;color:#fff;font-family:'Sora';font-weight:800;font-size:18px}
+
+/* ==================== FILIERES EDITOR ==================== */
+.filiere-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:18px;transition:.22s}
+.filiere-card:hover{border-color:var(--blue-100);box-shadow:var(--sh)}
+.filiere-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.filiere-icon{width:44px;height:44px;border-radius:12px;background:var(--blue-100);color:var(--blue);display:grid;place-items:center;flex-shrink:0}
+
+/* ==================== ACTEURS EDITOR ==================== */
+.acteur-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:18px;display:flex;align-items:flex-start;gap:14px;transition:.22s}
+.acteur-av{width:52px;height:52px;border-radius:14px;overflow:hidden;background:var(--blue-100);flex-shrink:0;display:grid;place-items:center}
+.acteur-av img{width:100%;height:100%;object-fit:cover}
+
+/* ==================== SEARCH ==================== */
+.search-box{display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:7px 13px;transition:.22s}
+.search-box:focus-within{border-color:var(--blue);background:#fff}
+.search-box input{border:none;background:transparent;outline:none;font-size:13.5px;font-family:inherit;color:var(--ink);flex:1}
+
+/* ==================== DRAG INDICATOR ==================== */
+.drag-indicator{display:flex;flex-direction:column;gap:3px;cursor:grab;padding:2px}
+.drag-indicator span{width:18px;height:2px;background:var(--muted);border-radius:1px;display:block}
+</style>
+</head>
+<body>
+
+<!-- ==================== ICONS SVG ==================== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+<symbol id="i-news" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></symbol>
+<symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="i-yt" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02"/></symbol>
+<symbol id="i-bold" viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></symbol>
+<symbol id="i-italic" viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></symbol>
+<symbol id="i-ul" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+<symbol id="i-ol" viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+<symbol id="i-align-l" viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></symbol>
+<symbol id="i-align-c" viewBox="0 0 24 24"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="7" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="7" y2="18"/></symbol>
+<symbol id="i-align-r" viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></symbol>
+<symbol id="i-emoji" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></symbol>
+<symbol id="i-frame" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></symbol>
+<symbol id="i-arrow-ud" viewBox="0 0 24 24"><polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+<symbol id="i-col" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></symbol>
+<symbol id="i-h1" viewBox="0 0 24 24"><path d="M4 12h8M4 6v12M12 6v12"/><path d="M17 6v12M17 11h4M21 6v12"/></symbol>
+<symbol id="i-strike" viewBox="0 0 24 24"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 20H7.5A3 3 0 0 1 4.68 16"/><line x1="4" y1="12" x2="20" y2="12"/></symbol>
+<symbol id="i-under" viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></symbol>
+<symbol id="i-sep" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></symbol>
+<symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+<symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+</svg>
+
+<!-- ==================== SIDEBAR ==================== -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">I</div>
+    <div>
+      <b>IFGI Admin</b>
+      <span>Panneau de gestion</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="section-label">Principal</div>
+    <div class="nav-item active" data-panel="dashboard">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-dash"/></svg></div>
+      <span class="nav-label">Tableau de bord</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="section-label">Contenu</div>
+    <div class="nav-item" data-panel="actualites">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-news"/></svg></div>
+      <span class="nav-label">Actualités / Blog</span>
+      <span class="nav-badge">6</span>
+    </div>
+    <div class="nav-item" data-panel="galerie">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-img"/></svg></div>
+      <span class="nav-label">Galerie</span>
+    </div>
+    <div class="nav-item" data-panel="videos">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-film"/></svg></div>
+      <span class="nav-label">Vidéos</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="section-label">Pages du site</div>
+    <div class="nav-item" data-panel="page-accueil">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-star"/></svg></div>
+      <span class="nav-label">Page Accueil</span>
+    </div>
+    <div class="nav-item" data-panel="filieres">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-chart"/></svg></div>
+      <span class="nav-label">Filières</span>
+    </div>
+    <div class="nav-item" data-panel="acteurs">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-users"/></svg></div>
+      <span class="nav-label">Acteurs / Équipe</span>
+    </div>
+    <div class="nav-item" data-panel="apropos">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-info"/></svg></div>
+      <span class="nav-label">À propos</span>
+    </div>
+    <div class="nav-item" data-panel="contact">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-phone"/></svg></div>
+      <span class="nav-label">Contact & Admission</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="section-label">Paramètres</div>
+    <div class="nav-item" data-panel="settings">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-set"/></svg></div>
+      <span class="nav-label">Paramètres</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="nav-item" data-panel="logout" id="logoutBtn">
+      <div class="nav-icon"><svg class="ico20"><use href="#i-out"/></svg></div>
+      <span class="nav-label user-info">
+        <span class="u-name">Administrateur</span>
+        <span class="u-role">IFGI • Super Admin</span>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== HEADER ==================== -->
+<header id="header">
+  <button class="h-toggle" id="sidebarToggle">
+    <svg class="ico20"><use href="#i-menu"/></svg>
+  </button>
+  <span class="h-breadcrumb"><b id="breadcrumb">Tableau de bord</b></span>
+  <div class="h-actions">
+    <button class="h-btn h-btn-ghost" id="viewSiteBtn" onclick="window.open(encodeURI('IFGI_site_v2 (1).html'),'_blank')">
+      <svg class="ico16"><use href="#i-eye"/></svg> Voir le site
+    </button>
+    <button class="h-btn h-btn-blue" id="globalSaveBtn" onclick="toast('Modifications sauvegardées !','success')">
+      <svg class="ico16"><use href="#i-check"/></svg> Sauvegarder
+    </button>
+  </div>
+</header>
+
+<!-- ==================== CONTENT ==================== -->
+<main id="content">
+
+<!-- ===== DASHBOARD ===== -->
+<div class="panel active" id="panel-dashboard">
+  <div class="stats-row">
+    <div class="stat-card"><div class="sc-icon bl"><svg class="ico20"><use href="#i-news"/></svg></div><div class="sc-label">Articles publiés</div><div class="sc-val bl">7</div><div class="sc-sub">6 en ligne • 1 brouillon</div></div>
+    <div class="stat-card"><div class="sc-icon or"><svg class="ico20"><use href="#i-img"/></svg></div><div class="sc-label">Éléments galerie</div><div class="sc-val or">12</div><div class="sc-sub">Photos, vidéos, événements</div></div>
+    <div class="stat-card"><div class="sc-icon gr"><svg class="ico20"><use href="#i-users"/></svg></div><div class="sc-label">Acteurs / Équipe</div><div class="sc-val gr">4</div><div class="sc-sub">Profils configurés</div></div>
+    <div class="stat-card"><div class="sc-icon re"><svg class="ico20"><use href="#i-film"/></svg></div><div class="sc-label">Vidéos de présentation</div><div class="sc-val" style="color:var(--danger)">1</div><div class="sc-sub">Vidéo YouTube principale</div></div>
+  </div>
+
+  <div class="two-col mt24">
+    <div class="card">
+      <div class="card-header">
+        <h3>Derniers articles</h3>
+        <button class="h-btn h-btn-blue" onclick="switchPanel('actualites')"><svg class="ico16"><use href="#i-plus"/></svg> Nouvel article</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><div class="td-flex"><div class="td-img" style="background:var(--blue-100);color:var(--blue)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Journée portes ouvertes 2026 : succès record</div><div class="td-sub">28 Oct 2026</div></div></div></td><td><span class="badge badge-blue">Événement</span></td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn edit" onclick="openEditArticle(0)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr><td><div class="td-flex"><div class="td-img" style="background:var(--orange-100);color:var(--orange-d)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">BTS Génie Civil remportent le concours national</div><div class="td-sub">28 Oct 2026</div></div></div></td><td><span class="badge badge-or">Concours</span></td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn edit" onclick="openEditArticle(1)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr><td><div class="td-flex"><div class="td-img" style="background:var(--blue-100);color:var(--blue)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nouveau laboratoire d'électronique</div><div class="td-sub">05 Oct 2026</div></div></div></td><td><span class="badge badge-muted">Infrastructure</span></td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn edit" onclick="openEditArticle(2)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Accès rapides</h3></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="h-btn h-btn-blue w100" onclick="openNewArticle()"><svg class="ico16"><use href="#i-news"/></svg> Rédiger un article</button>
+          <button class="h-btn h-btn-or w100" onclick="switchPanel('galerie')"><svg class="ico16"><use href="#i-img"/></svg> Ajouter photo/vidéo galerie</button>
+          <button class="h-btn h-btn-ghost w100" onclick="switchPanel('page-accueil')"><svg class="ico16"><use href="#i-edit"/></svg> Modifier la page d'accueil</button>
+          <button class="h-btn h-btn-ghost w100" onclick="switchPanel('acteurs')"><svg class="ico16"><use href="#i-users"/></svg> Gérer l'équipe</button>
+          <button class="h-btn h-btn-ghost w100" onclick="switchPanel('filieres')"><svg class="ico16"><use href="#i-chart"/></svg> Modifier les filières</button>
+          <button class="h-btn h-btn-ghost w100" onclick="switchPanel('contact')"><svg class="ico16"><use href="#i-phone"/></svg> Infos contact & admission</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACTUALITÉS ===== -->
+<div class="panel" id="panel-actualites">
+  <div class="flex-row between mb24">
+    <div>
+      <h2 class="section-title" style="margin-bottom:4px">Actualités & Blog</h2>
+      <p class="text-muted">Gérez, créez et publiez vos articles.</p>
+    </div>
+    <button class="h-btn h-btn-blue" onclick="openNewArticle()"><svg class="ico16"><use href="#i-plus"/></svg> Nouvel article</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-liste">Liste des articles</button>
+    <button class="tab-btn" data-tab="tab-editeur" id="editorTabBtn">Éditeur</button>
+  </div>
+
+  <div class="tab-pane active" id="tab-liste">
+    <div class="card">
+      <div class="card-header">
+        <div class="search-box" style="max-width:280px">
+          <svg class="ico16" style="color:var(--muted)"><use href="#i-eye"/></svg>
+          <input type="text" placeholder="Rechercher un article…" oninput="filterArticles(this.value)">
+        </div>
+        <div class="flex-row" style="gap:8px">
+          <select class="tb-select" style="height:36px">
+            <option>Toutes catégories</option><option>Événement</option><option>Concours</option><option>Infrastructures</option><option>Innovation</option><option>Institution</option><option>Formations</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="articlesTable">
+          <thead><tr><th>Titre</th><th>Catégorie</th><th>Auteur</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody id="articlesBody">
+            <tr data-id="0"><td><div class="td-flex"><div class="td-img" style="background:var(--blue-100);color:var(--blue)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">Journée portes ouvertes 2026</div><div class="td-sub">À la une — 1 200 mots</div></div></div></td><td><span class="badge badge-blue">Événement</span></td><td>Cellule Comm.</td><td>28 Oct 2026</td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn view" title="Voir" onclick="toast('Aperçu de l\'article','')"><svg class="ico16"><use href="#i-eye"/></svg></button><button class="act-btn edit" title="Modifier" onclick="openEditArticle(0)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" title="Supprimer" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr data-id="1"><td><div class="td-flex"><div class="td-img" style="background:var(--orange-100);color:var(--orange-d)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">BTS Génie Civil — concours national BTP</div><div class="td-sub">Concours — 850 mots</div></div></div></td><td><span class="badge badge-or">Concours</span></td><td>Cellule Comm.</td><td>28 Oct 2026</td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn view" onclick="toast('Aperçu de l\'article','')"><svg class="ico16"><use href="#i-eye"/></svg></button><button class="act-btn edit" onclick="openEditArticle(1)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr data-id="2"><td><div class="td-flex"><div class="td-img" style="background:var(--blue-100);color:var(--blue)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">Nouveau laboratoire d'électronique</div><div class="td-sub">Infrastructure — 700 mots</div></div></div></td><td><span class="badge badge-muted">Infrastructure</span></td><td>Cellule Comm.</td><td>05 Oct 2026</td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn view" onclick="toast('Aperçu de l\'article','')"><svg class="ico16"><use href="#i-eye"/></svg></button><button class="act-btn edit" onclick="openEditArticle(2)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr data-id="3"><td><div class="td-flex"><div class="td-img" style="background:var(--blue-100);color:var(--blue)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">Rentrée académique 2026-2027</div><div class="td-sub">Vie scolaire — 600 mots</div></div></div></td><td><span class="badge badge-muted">Vie scolaire</span></td><td>Cellule Comm.</td><td>15 Sep 2026</td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn view" onclick="toast('Aperçu de l\'article','')"><svg class="ico16"><use href="#i-eye"/></svg></button><button class="act-btn edit" onclick="openEditArticle(3)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr data-id="4"><td><div class="td-flex"><div class="td-img" style="background:var(--orange-100);color:var(--orange-d)"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">80 étudiants en stage — semestre</div><div class="td-sub">Formations — 500 mots</div></div></div></td><td><span class="badge badge-or">Formations</span></td><td>Cellule Comm.</td><td>22 Août 2026</td><td><span class="badge badge-gr">Publié</span></td><td><div class="row-actions"><button class="act-btn view" onclick="toast('Aperçu de l\'article','')"><svg class="ico16"><use href="#i-eye"/></svg></button><button class="act-btn edit" onclick="openEditArticle(4)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+            <tr data-id="5" style="background:#fffbf5"><td><div class="td-flex"><div class="td-img" style="background:#fff3cd;color:#b7791f"><svg class="ico16"><use href="#i-news"/></svg></div><div><div class="td-name">Robot suiveur primé à Abidjan [BROUILLON]</div><div class="td-sub">Innovation — 400 mots</div></div></div></td><td><span class="badge badge-muted">Innovation</span></td><td>Cellule Comm.</td><td>18 Juin 2026</td><td><span class="badge badge-muted">Brouillon</span></td><td><div class="row-actions"><button class="act-btn edit" onclick="openEditArticle(5)"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cet article')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉDITEUR D'ARTICLE -->
+  <div class="tab-pane" id="tab-editeur">
+    <div class="two-col" style="align-items:start">
+      <!-- Éditeur principal -->
+      <div style="grid-column:1 / span 1">
+        <div class="card mb16">
+          <div class="card-body">
+            <div class="fg mb16">
+              <label>Titre de l'article <span>*</span></label>
+              <input type="text" id="artTitle" placeholder="Ex : Journée portes ouvertes 2026 : un succès record" style="font-size:17px;font-weight:700">
+            </div>
+            <div class="fg">
+              <label>Description / Résumé</label>
+              <textarea id="artDesc" placeholder="Courte description affichée dans la liste des articles (150 mots max.)" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ÉDITEUR RICHE -->
+        <div class="card">
+          <div class="card-header"><h3>Contenu de l'article</h3></div>
+          <div class="editor-wrap">
+            <div class="editor-toolbar" id="editorToolbar">
+              <!-- Historique -->
+              <button class="tb-btn" title="Annuler (Ctrl+Z)" onclick="execCmd('undo')"><svg class="ico16"><use href="#i-undo"/></svg></button>
+              <button class="tb-btn" title="Refaire (Ctrl+Y)" onclick="execCmd('redo')"><svg class="ico16"><use href="#i-redo"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Titres -->
+              <select class="tb-select" title="Style de texte" onchange="execCmd('formatBlock',this.value);this.value='p'">
+                <option value="p">Paragraphe</option>
+                <option value="h1">Titre H1</option>
+                <option value="h2">Titre H2</option>
+                <option value="h3">Titre H3</option>
+                <option value="h4">Titre H4</option>
+                <option value="pre">Code</option>
+                <option value="blockquote">Citation</option>
+              </select>
+              <!-- Police -->
+              <select class="tb-select" title="Police d'écriture" onchange="execCmd('fontName',this.value)">
+                <option value="">Police</option>
+                <option value="Manrope">Manrope</option>
+                <option value="Sora">Sora</option>
+                <option value="Roboto Slab">Roboto Slab</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+              <!-- Taille -->
+              <select class="tb-select" title="Taille du texte" onchange="execCmd('fontSize',this.value)">
+                <option value="">Taille</option>
+                <option value="1">Très petit</option>
+                <option value="2">Petit</option>
+                <option value="3">Normal</option>
+                <option value="4">Grand</option>
+                <option value="5">Très grand</option>
+                <option value="6">Énorme</option>
+                <option value="7">Maximum</option>
+              </select>
+              <div class="tb-sep"></div>
+              <!-- Formatage -->
+              <button class="tb-btn" title="Gras (Ctrl+B)" onclick="execCmd('bold')" id="btn-bold"><svg class="ico16"><use href="#i-bold"/></svg></button>
+              <button class="tb-btn" title="Italique (Ctrl+I)" onclick="execCmd('italic')"><svg class="ico16"><use href="#i-italic"/></svg></button>
+              <button class="tb-btn" title="Souligné (Ctrl+U)" onclick="execCmd('underline')"><svg class="ico16"><use href="#i-under"/></svg></button>
+              <button class="tb-btn" title="Barré" onclick="execCmd('strikethrough')"><svg class="ico16"><use href="#i-strike"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Couleurs -->
+              <div class="tb-color" title="Couleur du texte">
+                <input type="color" value="#0e3a63" title="Couleur texte" onchange="execCmd('foreColor',this.value)">
+              </div>
+              <div class="tb-color" title="Surligneur" style="background:var(--orange-100)">
+                <input type="color" value="#fff1e2" title="Couleur fond" onchange="execCmd('hiliteColor',this.value)">
+              </div>
+              <div class="tb-sep"></div>
+              <!-- Alignement -->
+              <button class="tb-btn" title="Aligner à gauche" onclick="execCmd('justifyLeft')"><svg class="ico16"><use href="#i-align-l"/></svg></button>
+              <button class="tb-btn" title="Centrer" onclick="execCmd('justifyCenter')"><svg class="ico16"><use href="#i-align-c"/></svg></button>
+              <button class="tb-btn" title="Aligner à droite" onclick="execCmd('justifyRight')"><svg class="ico16"><use href="#i-align-r"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Listes -->
+              <button class="tb-btn" title="Liste à puces" onclick="execCmd('insertUnorderedList')"><svg class="ico16"><use href="#i-ul"/></svg></button>
+              <button class="tb-btn" title="Liste numérotée" onclick="execCmd('insertOrderedList')"><svg class="ico16"><use href="#i-ol"/></svg></button>
+              <button class="tb-btn" title="Citation" onclick="execCmd('formatBlock','blockquote')"><svg class="ico16"><use href="#i-quote"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Insertion -->
+              <button class="tb-btn" title="Insérer image" onclick="openInsertImage()"><svg class="ico16"><use href="#i-img"/></svg></button>
+              <button class="tb-btn" title="Insérer vidéo YouTube" onclick="openInsertVideo()"><svg class="ico16"><use href="#i-yt"/></svg></button>
+              <button class="tb-btn" title="Insérer lien" onclick="openInsertLink()"><svg class="ico16"><use href="#i-link"/></svg></button>
+              <button class="tb-btn" title="Insérer tableau" onclick="openInsertTable()"><svg class="ico16"><use href="#i-table"/></svg></button>
+              <button class="tb-btn" title="Insérer ligne de séparation" onclick="execCmd('insertHorizontalRule')"><svg class="ico16"><use href="#i-sep"/></svg></button>
+              <button class="tb-btn" title="Insérer emoji" onclick="toggleEmojiPicker(this)" id="emojiToggle"><svg class="ico16"><use href="#i-emoji"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Cadres / Sections -->
+              <button class="tb-btn" title="Ajouter un cadre coloré" onclick="insertFrame()"><svg class="ico16"><use href="#i-frame"/></svg></button>
+              <button class="tb-btn" title="Ajouter une section / colonne" onclick="insertSection()"><svg class="ico16"><use href="#i-col"/></svg></button>
+              <div class="tb-sep"></div>
+              <!-- Code HTML -->
+              <button class="tb-btn" title="Voir/modifier le code HTML" onclick="toggleHtmlMode()"><svg class="ico16"><use href="#i-code"/></svg></button>
+              <!-- Emoji Picker -->
+              <div class="emoji-picker" id="emojiPicker"></div>
+            </div>
+            <div class="editor-area" id="richEditor" contenteditable="true" data-placeholder="Rédigez votre article ici…">
+              <p>Commencez à rédiger votre article ici. Utilisez la barre d'outils ci-dessus pour formater votre texte, insérer des images, des vidéos, des tableaux et bien plus encore.</p>
+            </div>
+            <div class="editor-status">
+              <span id="editorMode">Mode : Visuel</span>
+              <span id="wordCount" class="editor-word-count">0 mots</span>
+            </div>
+          </div>
+          <!-- HTML mode -->
+          <textarea id="htmlEditor" style="display:none;width:100%;min-height:300px;padding:16px;font-family:'Courier New',monospace;font-size:13px;border:none;resize:vertical;outline:none;background:#1a1a2e;color:#e2e8f0;line-height:1.6"></textarea>
+        </div>
+      </div>
+
+      <!-- Sidebar article -->
+      <div style="grid-column:2 / span 1">
+        <div class="card mb16">
+          <div class="card-header"><h3>Publication</h3></div>
+          <div class="card-body">
+            <div class="fg mb16">
+              <label>Statut</label>
+              <select>
+                <option>Publié</option>
+                <option>Brouillon</option>
+                <option>Planifié</option>
+              </select>
+            </div>
+            <div class="fg mb16">
+              <label>Date de publication</label>
+              <input type="datetime-local" value="2026-11-24T10:00">
+            </div>
+            <div class="flex-row" style="gap:8px;justify-content:space-between">
+              <button class="h-btn h-btn-ghost" onclick="toast('Article sauvegardé en brouillon','')"><svg class="ico16"><use href="#i-check"/></svg> Brouillon</button>
+              <button class="h-btn h-btn-blue" onclick="toast('Article publié avec succès !','success')"><svg class="ico16"><use href="#i-check"/></svg> Publier</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb16">
+          <div class="card-header"><h3>Image bannière</h3></div>
+          <div class="card-body">
+            <div class="upload-zone" id="bannerUploadZone" onclick="document.getElementById('bannerInput').click()">
+              <input type="file" id="bannerInput" accept="image/*" onchange="previewBanner(this)">
+              <div class="uz-icon">🖼️</div>
+              <b>Choisir une image</b>
+              <p>JPEG, PNG, WebP — max 5 Mo<br>Recommandé : 1200×600 px</p>
+            </div>
+            <img id="bannerPreview" style="display:none;width:100%;border-radius:10px;margin-top:12px;max-height:160px;object-fit:cover">
+          </div>
+        </div>
+
+        <div class="card mb16">
+          <div class="card-header"><h3>Métadonnées</h3></div>
+          <div class="card-body">
+            <div class="fg mb16">
+              <label>Catégorie</label>
+              <select>
+                <option>Événement</option><option>Concours</option><option>Infrastructures</option><option>Innovation</option><option>Institution</option><option>Formations</option><option>Vie scolaire</option>
+              </select>
+            </div>
+            <div class="fg mb16">
+              <label>Auteur</label>
+              <input type="text" value="Cellule Communication IFGI">
+            </div>
+            <div class="fg mb16">
+              <label>Tags (séparés par des virgules)</label>
+              <input type="text" placeholder="ex: BTS, génie civil, concours">
+            </div>
+            <div class="fg">
+              <label>Temps de lecture estimé</label>
+              <input type="text" placeholder="ex: 3 min" id="artReadTime">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>SEO</h3></div>
+          <div class="card-body">
+            <div class="fg mb16">
+              <label>Méta-titre</label>
+              <input type="text" placeholder="Titre pour les moteurs de recherche">
+            </div>
+            <div class="fg">
+              <label>Méta-description</label>
+              <textarea placeholder="Description pour Google (150 caractères max.)" rows="2" maxlength="160"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GALERIE ===== -->
+<div class="panel" id="panel-galerie">
+  <div class="flex-row between mb24">
+    <div>
+      <h2 class="section-title" style="margin-bottom:4px">Galerie</h2>
+      <p class="text-muted">Ajoutez, modifiez et organisez les photos et vidéos de la galerie.</p>
+    </div>
+    <div class="flex-row" style="gap:10px">
+      <button class="h-btn h-btn-ghost" onclick="openModal('modalGalFilter')">Filtrer / Catégories</button>
+      <button class="h-btn h-btn-blue" onclick="openModal('modalAddGal')"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-gal-all">Tout (12)</button>
+    <button class="tab-btn" data-tab="tab-gal-campus">Campus</button>
+    <button class="tab-btn" data-tab="tab-gal-ateliers">Ateliers</button>
+    <button class="tab-btn" data-tab="tab-gal-labos">Labos</button>
+    <button class="tab-btn" data-tab="tab-gal-events">Événements</button>
+  </div>
+
+  <div class="tab-pane active" id="tab-gal-all">
+    <div class="gal-grid" id="galGrid">
+      <div class="gal-add" onclick="openModal('modalAddGal')">
+        <svg class="ico20" style="color:var(--blue)"><use href="#i-plus"/></svg>
+        <span>Ajouter un élément</span>
+      </div>
+      <!-- Items galerie -->
+      <div class="gal-item" data-sync-id="1" data-cat="campus" data-t="Campus principal de Bé-Kpota" data-d="Vue du bâtiment principal, de la cour d'honneur et du jardin technologique de l'institut.">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,var(--blue),#2f83c9);display:grid;place-items:center"><svg class="ico20" style="color:rgba(255,255,255,.5)"><use href="#i-star"/></svg></div>
+        <div class="gal-overlay">
+          <button class="h-btn h-btn-ghost" style="font-size:11px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.5)" onclick="openEditGalItem(this)">Modifier</button>
+          <button class="h-btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="confirmDelete('cet élément galerie')">Supprimer</button>
+        </div>
+        <div class="gal-label">Campus principal<br><small>Campus</small></div>
+        <span class="gal-type">📷</span>
+      </div>
+      <div class="gal-item" data-sync-id="2" data-cat="ateliers" data-t="Atelier mécanique" data-d="Tours parallèles, fraiseuses et postes d'ajustage utilisés par les étudiants de F1.">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,var(--orange),#ff9838);display:grid;place-items:center"><svg class="ico20" style="color:rgba(255,255,255,.5)"><use href="#i-gear"/></svg></div>
+        <div class="gal-overlay">
+          <button class="h-btn h-btn-ghost" style="font-size:11px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.5)" onclick="openEditGalItem(this)">Modifier</button>
+          <button class="h-btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="confirmDelete('cet élément galerie')">Supprimer</button>
+        </div>
+        <div class="gal-label">Atelier mécanique<br><small>Ateliers</small></div>
+        <span class="gal-type">📷</span>
+      </div>
+      <div class="gal-item" data-sync-id="3" data-cat="labos" data-t="Labo électronique" data-d="Bancs d'essai numériques, oscilloscopes et espace prototypage avec impression 3D.">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#2d6a4f,#52b788);display:grid;place-items:center"><svg class="ico20" style="color:rgba(255,255,255,.5)"><use href="#i-star"/></svg></div>
+        <div class="gal-overlay">
+          <button class="h-btn h-btn-ghost" style="font-size:11px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.5)" onclick="openEditGalItem(this)">Modifier</button>
+          <button class="h-btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="confirmDelete('cet élément galerie')">Supprimer</button>
+        </div>
+        <div class="gal-label">Labo électronique<br><small>Laboratoires</small></div>
+        <span class="gal-type">📷</span>
+      </div>
+      <div class="gal-item" data-sync-id="6" data-cat="events" data-t="Journée scientifique" data-d="Exposition de projets étudiants : robots suiveurs, maquettes de ponts et stations météo.">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#9b2226,#e9c46a);display:grid;place-items:center"><svg class="ico20" style="color:rgba(255,255,255,.5)"><use href="#i-star"/></svg></div>
+        <div class="gal-overlay">
+          <button class="h-btn h-btn-ghost" style="font-size:11px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.5)" onclick="openEditGalItem(this)">Modifier</button>
+          <button class="h-btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="confirmDelete('cet élément galerie')">Supprimer</button>
+        </div>
+        <div class="gal-label">Journée scientifique<br><small>Événements</small></div>
+        <span class="gal-type">🎬</span>
+      </div>
+      <div class="gal-item" data-sync-id="5" data-cat="campus" data-t="Chantier école" data-d="Ouvrage grandeur nature : coffrage, ferraillage et topographie appliqués par les F4.">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#4a4e69,#9a8c98);display:grid;place-items:center"><svg class="ico20" style="color:rgba(255,255,255,.5)"><use href="#i-star"/></svg></div>
+        <div class="gal-overlay">
+          <button class="h-btn h-btn-ghost" style="font-size:11px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.5)" onclick="openEditGalItem(this)">Modifier</button>
+          <button class="h-btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="confirmDelete('cet élément galerie')">Supprimer</button>
+        </div>
+        <div class="gal-label">Chantier école<br><small>Campus</small></div>
+        <span class="gal-type">📷</span>
+      </div>
+    </div>
+    <p class="text-muted mt16 text-sm">💡 Faites glisser les éléments pour les réorganiser. Cliquez sur une vignette pour la modifier.</p>
+  </div>
+</div>
+
+<!-- ===== VIDÉOS ===== -->
+<div class="panel" id="panel-videos">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Vidéos</h2><p class="text-muted">Gérez la vidéo principale et les vidéos de galerie.</p></div>
+    <button class="h-btn h-btn-blue" onclick="openModal('modalAddVideo')"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter une vidéo</button>
+  </div>
+  <div class="card mb20">
+    <div class="card-header"><h3>🎬 Vidéo principale de présentation</h3></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="fg span2">
+          <label>ID YouTube ou URL complète <span>*</span></label>
+          <input type="text" id="mainVideoId" value="VIDEO_ID" placeholder="Ex: dQw4w9WgXcQ ou https://www.youtube.com/watch?v=...">
+          <span class="hint">Copiez l'identifiant depuis l'URL YouTube : youtube.com/watch?v=<b>IDENTIFIANT</b></span>
+        </div>
+        <div class="fg">
+          <label>Titre de la vidéo</label>
+          <input type="text" value="Découvrez l'IFGI en vidéo" placeholder="Titre affiché">
+        </div>
+        <div class="fg">
+          <label>Badge / Sous-titre</label>
+          <input type="text" value="🎓 Visite virtuelle • 3 min" placeholder="Ex: Visite virtuelle • 3 min">
+        </div>
+        <div class="fg span2">
+          <label>Aperçu de la vidéo</label>
+          <div style="background:var(--ink);border-radius:14px;overflow:hidden;position:relative;aspect-ratio:16/5;display:flex;align-items:center;justify-content:center">
+            <div id="videoPreviewThumb" style="color:rgba(255,255,255,.4);text-align:center">
+              <div style="font-size:48px;margin-bottom:8px">▶</div>
+              <div style="font-size:14px">Entrez un ID YouTube pour prévisualiser</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex-row mt16" style="justify-content:flex-end;gap:10px">
+        <button class="h-btn h-btn-ghost" onclick="previewYouTube()"><svg class="ico16"><use href="#i-eye"/></svg> Prévisualiser</button>
+        <button class="h-btn h-btn-blue" onclick="toast('Vidéo principale mise à jour !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Toutes les vidéos</h3></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Titre</th><th>Plateforme</th><th>ID/URL</th><th>Utilisé dans</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td><div class="td-flex"><div class="td-img" style="background:#ff0000;color:#fff"><svg class="ico16"><use href="#i-yt"/></svg></div><div class="td-name">Vidéo présentation IFGI</div></div></td><td><span class="badge badge-re">YouTube</span></td><td><code style="font-size:11px;background:var(--bg);padding:3px 7px;border-radius:5px">VIDEO_ID</code></td><td>Accueil • Galerie</td><td><div class="row-actions"><button class="act-btn edit" onclick="toast('Modifier la vidéo','')"><svg class="ico16"><use href="#i-edit"/></svg></button><button class="act-btn del" onclick="confirmDelete('cette vidéo')"><svg class="ico16"><use href="#i-trash"/></svg></button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE ACCUEIL ===== -->
+<div class="panel" id="panel-page-accueil">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Page d'accueil</h2><p class="text-muted">Modifiez tous les éléments de la page d'accueil.</p></div>
+    <button class="h-btn h-btn-blue" onclick="toast('Page d\'accueil sauvegardée !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+  </div>
+
+  <div class="page-blocks">
+    <!-- HERO -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>🦸 Section Hero (bannière principale)</h4>
+        <span class="pb-type">HERO</span>
+        <div class="pb-actions">
+          <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          <svg class="ico16" style="color:var(--muted);transition:.3s" id="arrow-hero"><use href="#i-down"/></svg>
+        </div>
+      </div>
+      <div class="pb-body open">
+        <div class="form-grid">
+          <div class="fg">
+            <label>Titre principal (ligne 1)</label>
+            <input type="text" value="Formez les">
+          </div>
+          <div class="fg">
+            <label>Mot en dégradé</label>
+            <input type="text" value="Génies">
+          </div>
+          <div class="fg span2">
+            <label>Titre ligne 2</label>
+            <input type="text" value="de Demain">
+          </div>
+          <div class="fg span2">
+            <label>Description / Lead</label>
+            <textarea rows="2">L'Institut de Formation des Génies Industriels est le lycée technique industriel de référence à Lomé. Ateliers modernes, laboratoires équipés et pédagogie par la pratique : du CAP au BTS.</textarea>
+          </div>
+          <div class="fg">
+            <label>Bouton principal (texte)</label>
+            <input type="text" value="Découvrir nos filières">
+          </div>
+          <div class="fg">
+            <label>Badge localisation</label>
+            <input type="text" value="Bé-Kpota, Lomé — Togo">
+          </div>
+          <div class="fg span2"><label>Chips flottants</label>
+            <div class="form-grid" style="margin-top:0">
+              <input type="text" value="Mécanique" placeholder="Chip 1">
+              <input type="text" value="Électricité" placeholder="Chip 2">
+              <input type="text" value="Électronique" placeholder="Chip 3">
+              <input type="text" value="Génie Civil" placeholder="Chip 4">
+            </div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <h4 style="margin-bottom:12px">Statistiques héro</h4>
+        <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="fg"><label>Étudiants</label><input type="number" value="1200"></div>
+          <div class="fg"><label>Enseignants</label><input type="number" value="85"></div>
+          <div class="fg"><label>Filières</label><input type="number" value="6"></div>
+          <div class="fg"><label>Réussite (%)</label><input type="number" value="92"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANDE DÉFILANTE -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>📢 Bande défilante (Marquee)</h4><span class="pb-type">MARQUEE</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="fg span2">
+          <label>Texte défilant (séparez par •)</label>
+          <input type="text" value="Mécanique • Électronique • Électricité • Génie Civil • BT • BTS">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION VIDÉO -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>🎬 Section Vidéo de présentation</h4><span class="pb-type">VIDÉO</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="form-grid">
+          <div class="fg"><label>ID YouTube</label><input type="text" value="VIDEO_ID"></div>
+          <div class="fg"><label>Label bouton play</label><input type="text" value="Regarder la vidéo de présentation"></div>
+          <div class="fg span2"><label>Avantages listés (un par ligne)</label><textarea rows="4">École technique de référence à Lomé
+Formations BT et BTS reconnues par l'État
+Plus de 4 800 diplômés actifs
+Ateliers et labos niveau industriel</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS BANDE -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>📊 Bande de statistiques</h4><span class="pb-type">STATS</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="fg"><label>Stat 1 (valeur)</label><input type="text" value="1200+"></div>
+          <div class="fg"><label>Stat 1 (libellé)</label><input type="text" value="Étudiants formés"></div>
+          <div class="fg"><label>Stat 2 (valeur)</label><input type="text" value="85+"></div>
+          <div class="fg"><label>Stat 2 (libellé)</label><input type="text" value="Enseignants"></div>
+          <div class="fg"><label>Stat 3 (valeur)</label><input type="text" value="40+"></div>
+          <div class="fg"><label>Stat 3 (libellé)</label><input type="text" value="Partenaires"></div>
+          <div class="fg"><label>Stat 4 (valeur)</label><input type="text" value="92%"></div>
+          <div class="fg"><label>Stat 4 (libellé)</label><input type="text" value="Taux de réussite"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALUMNI -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>🎓 Témoignages Alumni</h4><span class="pb-type">ALUMNI</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="alumni-cards" id="alumniList">
+          <div class="alumni-card">
+            <div><span class="drag-indicator" style="display:flex;flex-direction:column;gap:3px;cursor:grab"><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span></span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:10px;flex:1">
+              <div class="alumni-av">K</div>
+              <div class="fg"><label style="font-size:11px">Nom</label><input type="text" value="Koami AGBEKO" style="font-size:13px;padding:6px 9px"></div>
+              <div class="fg"><label style="font-size:11px">Rôle</label><input type="text" value="Technicien CIMTogo — F1 2019" style="font-size:13px;padding:6px 9px"></div>
+              <div style="grid-column:2 / span 2" class="fg"><label style="font-size:11px">Témoignage</label><textarea rows="2" style="font-size:12.5px">L'IFGI m'a donné une base solide. Dès mon premier jour en entreprise, j'étais opérationnel.</textarea></div>
+            </div>
+            <button class="act-btn del" onclick="confirmDelete('cet alumni')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+          </div>
+          <div class="alumni-card">
+            <div><span class="drag-indicator" style="display:flex;flex-direction:column;gap:3px;cursor:grab"><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span></span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:10px;flex:1">
+              <div class="alumni-av" style="background:var(--orange)">A</div>
+              <div class="fg"><label style="font-size:11px">Nom</label><input type="text" value="Ayawa MENSAH" style="font-size:13px;padding:6px 9px"></div>
+              <div class="fg"><label style="font-size:11px">Rôle</label><input type="text" value="Ingénieure CEET — F3 2021" style="font-size:13px;padding:6px 9px"></div>
+              <div style="grid-column:2 / span 2" class="fg"><label style="font-size:11px">Témoignage</label><textarea rows="2" style="font-size:12.5px">La plateforme solaire de l'IFGI m'a permis de maîtriser des outils que peu d'écoles proposent.</textarea></div>
+            </div>
+            <button class="act-btn del" onclick="confirmDelete('cet alumni')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+          </div>
+        </div>
+        <button class="h-btn h-btn-ghost mt16" onclick="addAlumni()"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter un alumni</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FILIÈRES ===== -->
+<div class="panel" id="panel-filieres">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Filières</h2><p class="text-muted">Modifiez les programmes et filières affichés.</p></div>
+    <button class="h-btn h-btn-blue" onclick="openModal('modalAddFiliere')"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter filière</button>
+  </div>
+  <div class="three-col" id="filieresGrid">
+    <div class="filiere-card">
+      <div class="filiere-header">
+        <div class="filiere-icon"><svg class="ico20"><use href="#i-gear"/></svg></div>
+        <div><div style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:1px">F1 • BT / BTS</div><input type="text" value="Mécanique générale & usinage" style="border:none;font-size:15px;font-weight:700;font-family:'Sora';width:100%;outline:none;background:transparent;color:var(--ink)"></div>
+        <label class="switch" style="margin-left:auto"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <textarea rows="3" style="border:1.5px solid var(--line);border-radius:8px;padding:8px;font-size:13px;width:100%;font-family:inherit;resize:none;outline:none">Tours, fraiseuses CNC, ajustage, lecture de plans et maintenance préventive pour l'industrie locale.</textarea>
+      <div class="form-grid mt8" style="grid-template-columns:1fr 1fr">
+        <input type="text" value="BT" placeholder="Tag 1" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input type="text" value="BTS" placeholder="Tag 2" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+      </div>
+      <div class="flex-row mt8" style="justify-content:flex-end;gap:6px">
+        <button class="act-btn del" onclick="confirmDelete('cette filière')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="filiere-card">
+      <div class="filiere-header">
+        <div class="filiere-icon" style="background:var(--orange-100);color:var(--orange-d)"><svg class="ico20"><use href="#i-star"/></svg></div>
+        <div><div style="font-size:11px;font-weight:800;color:var(--orange-d);letter-spacing:1px">F2 • BT / BTS</div><input type="text" value="Électronique & automatismes" style="border:none;font-size:15px;font-weight:700;font-family:'Sora';width:100%;outline:none;background:transparent;color:var(--ink)"></div>
+        <label class="switch" style="margin-left:auto"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <textarea rows="3" style="border:1.5px solid var(--line);border-radius:8px;padding:8px;font-size:13px;width:100%;font-family:inherit;resize:none;outline:none">Circuits numériques, microcontrôleurs, Arduino, automatismes industriels et espace prototypage 3D.</textarea>
+      <div class="form-grid mt8" style="grid-template-columns:1fr 1fr">
+        <input type="text" value="BT" placeholder="Tag 1" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input type="text" value="BTS" placeholder="Tag 2" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+      </div>
+      <div class="flex-row mt8" style="justify-content:flex-end;gap:6px">
+        <button class="act-btn del" onclick="confirmDelete('cette filière')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="filiere-card">
+      <div class="filiere-header">
+        <div class="filiere-icon"><svg class="ico20"><use href="#i-star"/></svg></div>
+        <div><div style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:1px">F3 • BT / BTS</div><input type="text" value="Électricité & énergies renouvelables" style="border:none;font-size:15px;font-weight:700;font-family:'Sora';width:100%;outline:none;background:transparent;color:var(--ink)"></div>
+        <label class="switch" style="margin-left:auto"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <textarea rows="3" style="border:1.5px solid var(--line);border-radius:8px;padding:8px;font-size:13px;width:100%;font-family:inherit;resize:none;outline:none">Installations HTA/BTB, photovoltaïque, réseaux électriques et systèmes solaires autonomes.</textarea>
+      <div class="form-grid mt8" style="grid-template-columns:1fr 1fr">
+        <input type="text" value="BT" placeholder="Tag 1" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input type="text" value="BTS" placeholder="Tag 2" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+      </div>
+      <div class="flex-row mt8" style="justify-content:flex-end;gap:6px">
+        <button class="act-btn del" onclick="confirmDelete('cette filière')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="filiere-card">
+      <div class="filiere-header">
+        <div class="filiere-icon" style="background:var(--orange-100);color:var(--orange-d)"><svg class="ico20"><use href="#i-star"/></svg></div>
+        <div><div style="font-size:11px;font-weight:800;color:var(--orange-d);letter-spacing:1px">F4 • BT / BTS</div><input type="text" value="Génie civil & construction" style="border:none;font-size:15px;font-weight:700;font-family:'Sora';width:100%;outline:none;background:transparent;color:var(--ink)"></div>
+        <label class="switch" style="margin-left:auto"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <textarea rows="3" style="border:1.5px solid var(--line);border-radius:8px;padding:8px;font-size:13px;width:100%;font-family:inherit;resize:none;outline:none">Topographie, béton armé, coffrage, chantier école grandeur nature et normes de construction.</textarea>
+      <div class="form-grid mt8" style="grid-template-columns:1fr 1fr">
+        <input type="text" value="BT" placeholder="Tag 1" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input type="text" value="BTS" placeholder="Tag 2" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+      </div>
+      <div class="flex-row mt8" style="justify-content:flex-end;gap:6px">
+        <button class="act-btn del" onclick="confirmDelete('cette filière')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACTEURS ===== -->
+<div class="panel" id="panel-acteurs">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Acteurs & Équipe</h2><p class="text-muted">Gérez les membres, fondateurs et acteurs du site.</p></div>
+    <button class="h-btn h-btn-blue" onclick="openModal('modalAddActeur')"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter un acteur</button>
+  </div>
+  <div class="two-col" id="acteursList">
+    <div class="acteur-card">
+      <div class="acteur-av">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--blue),#3f8bd4);display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:18px;color:#fff;border-radius:14px">KA</div>
+      </div>
+      <div style="flex:1">
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="fg"><label style="font-size:11px">Rôle / Fonction</label><input type="text" value="Fondateur & Directeur Général" style="font-size:12.5px;padding:6px 9px"></div>
+          <div class="fg"><label style="font-size:11px">Nom complet</label><input type="text" value="K. ADJIVA" style="font-size:13px;font-weight:700;padding:6px 9px"></div>
+          <div class="fg span2"><label style="font-size:11px">Témoignage / Bio courte</label><textarea rows="2" style="font-size:12.5px;padding:6px 9px">Ingénieur formé sur les chantiers, fondateur de l'IFGI. Vision : donner au Togo des techniciens que l'industrie n'a pas à reformer.</textarea></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="act-btn edit" onclick="openModal('modalEditActeur')"><svg class="ico16"><use href="#i-edit"/></svg></button>
+        <button class="act-btn del" onclick="confirmDelete('cet acteur')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="acteur-card">
+      <div class="acteur-av">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--orange),#ffa64d);display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:18px;color:#fff;border-radius:14px">MS</div>
+      </div>
+      <div style="flex:1">
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="fg"><label style="font-size:11px">Rôle / Fonction</label><input type="text" value="Directeur pédagogique" style="font-size:12.5px;padding:6px 9px"></div>
+          <div class="fg"><label style="font-size:11px">Nom complet</label><input type="text" value="M. SOGLO" style="font-size:13px;font-weight:700;padding:6px 9px"></div>
+          <div class="fg span2"><label style="font-size:11px">Témoignage / Bio courte</label><textarea rows="2" style="font-size:12.5px;padding:6px 9px">Pédagogue de terrain, il orchestre les programmes depuis leur création et veille à l'actualisation continue des curricula.</textarea></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="act-btn edit" onclick="openModal('modalEditActeur')"><svg class="ico16"><use href="#i-edit"/></svg></button>
+        <button class="act-btn del" onclick="confirmDelete('cet acteur')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="acteur-card">
+      <div class="acteur-av">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--blue),#3f8bd4);display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:18px;color:#fff;border-radius:14px">AK</div>
+      </div>
+      <div style="flex:1">
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="fg"><label style="font-size:11px">Rôle / Fonction</label><input type="text" value="Responsable ateliers" style="font-size:12.5px;padding:6px 9px"></div>
+          <div class="fg"><label style="font-size:11px">Nom complet</label><input type="text" value="A. KOMLA" style="font-size:13px;font-weight:700;padding:6px 9px"></div>
+          <div class="fg span2"><label style="font-size:11px">Témoignage / Bio courte</label><textarea rows="2" style="font-size:12.5px;padding:6px 9px">Technicien supérieur en mécanique, il supervise l'entretien et l'évolution du parc machines de l'institut.</textarea></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="act-btn edit" onclick="openModal('modalEditActeur')"><svg class="ico16"><use href="#i-edit"/></svg></button>
+        <button class="act-btn del" onclick="confirmDelete('cet acteur')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+    <div class="acteur-card">
+      <div class="acteur-av">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--orange),#ffa64d);display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:18px;color:#fff;border-radius:14px">EK</div>
+      </div>
+      <div style="flex:1">
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="fg"><label style="font-size:11px">Rôle / Fonction</label><input type="text" value="Chargée de communication" style="font-size:12.5px;padding:6px 9px"></div>
+          <div class="fg"><label style="font-size:11px">Nom complet</label><input type="text" value="E. KOFFI" style="font-size:13px;font-weight:700;padding:6px 9px"></div>
+          <div class="fg span2"><label style="font-size:11px">Témoignage / Bio courte</label><textarea rows="2" style="font-size:12.5px;padding:6px 9px">Elle gère la présence digitale, les relations presse et l'organisation des événements institutionnels.</textarea></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="act-btn edit" onclick="openModal('modalEditActeur')"><svg class="ico16"><use href="#i-edit"/></svg></button>
+        <button class="act-btn del" onclick="confirmDelete('cet acteur')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <p class="text-muted mt16 text-sm">💡 Chaque acteur peut avoir une photo de profil — cliquez sur Modifier pour l'ajouter.</p>
+</div>
+
+<!-- ===== À PROPOS ===== -->
+<div class="panel" id="panel-apropos">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Page À propos</h2><p class="text-muted">Modifiez le contenu institutionnel, historique et équipements.</p></div>
+    <button class="h-btn h-btn-blue" onclick="toast('À propos sauvegardé !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+  </div>
+  <div class="page-blocks">
+    <!-- FONDATEUR -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>👤 Section Fondateur</h4><span class="pb-type">FONDATEUR</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="form-grid">
+          <div class="fg"><label>Nom du fondateur</label><input type="text" value="K. ADJIVA"></div>
+          <div class="fg"><label>Titre / Fonction</label><input type="text" value="Fondateur — Institut de Formation des Génies Industriels"></div>
+          <div class="fg span2"><label>Photo du fondateur</label>
+            <div class="upload-zone" style="padding:16px" onclick="document.getElementById('fondateurPhoto').click()">
+              <input type="file" id="fondateurPhoto" accept="image/*">
+              <b>Changer la photo</b>
+              <p>JPEG, PNG — Carré recommandé</p>
+            </div>
+          </div>
+          <div class="fg span2"><label>Paragraphe 1</label><textarea rows="3">Ingénieur formé sur les chantiers puis dans les plus grandes écoles, M. ADJIVA a créé l'IFGI avec une idée simple : donner au Togo des techniciens que l'industrie n'aura pas à reformer.</textarea></div>
+          <div class="fg span2"><label>Paragraphe 2</label><textarea rows="3">Sa pédagogie tient en trois mots : rigueur, créativité, transmission. Rigueur du geste et du calcul, créativité dans la résolution de problèmes concrets.</textarea></div>
+          <div class="fg span2"><label>Paragraphe 3</label><textarea rows="3">Aujourd'hui, plus de 4 800 diplômés portent cette exigence dans les entreprises du Togo et de la sous-région. C'est, dit-il souvent, « le seul tableau d'honneur qui vaille ».</textarea></div>
+        </div>
+      </div>
+    </div>
+    <!-- TIMELINE -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>⏱️ Frise chronologique</h4><span class="pb-type">TIMELINE</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="timeline-editor" id="timelineEditor">
+          <div class="tl-row"><div class="tl-drag-handle">⠿</div><div class="tl-fields"><input type="text" value="FONDATION" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:700"><input type="text" value="Création de l'institut à Bé-Kpota" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px"><textarea rows="2" style="border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;width:100%;grid-column:span 2;resize:none">Ouverture des deux premières filières — mécanique et électricité — avec 74 étudiants pionniers.</textarea></div><button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+          <div class="tl-row"><div class="tl-drag-handle">⠿</div><div class="tl-fields"><input type="text" value="EXPANSION" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:700"><input type="text" value="Ouverture de l'électronique & du génie civil" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px"><textarea rows="2" style="border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;width:100%;grid-column:span 2;resize:none">Construction des ateliers lourds et du chantier école ; premiers partenariats industriels nationaux.</textarea></div><button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+          <div class="tl-row"><div class="tl-drag-handle">⠿</div><div class="tl-fields"><input type="text" value="AUJOURD'HUI" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:700"><input type="text" value="Plus de 1 200 étudiants, 40 partenaires" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px"><textarea rows="2" style="border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;width:100%;grid-column:span 2;resize:none">Un réseau de 4 800 diplômés actifs dans l'industrie togolaise et ouest-africaine.</textarea></div><button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+        </div>
+        <button class="h-btn h-btn-ghost mt16" onclick="addTimelineStep()"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter une étape</button>
+      </div>
+    </div>
+    <!-- MISSION / VISION -->
+    <div class="page-block">
+      <div class="pb-head" onclick="toggleBlock(this)">
+        <span class="drag-indicator"><span></span><span></span><span></span></span>
+        <h4>🎯 Mission, Vision, Valeurs</h4><span class="pb-type">MVV</span>
+        <div class="pb-actions"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><svg class="ico16" style="color:var(--muted)"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="pb-body">
+        <div class="form-grid">
+          <div class="fg"><label>Titre Mission</label><input type="text" value="Notre mission"></div>
+          <div class="fg"><label>Texte Mission</label><textarea rows="2">Former des techniciens immédiatement opérationnels, maîtrisant les gestes professionnels, les normes de sécurité et les outils numériques de leur secteur.</textarea></div>
+          <div class="fg"><label>Titre Vision</label><input type="text" value="Notre vision"></div>
+          <div class="fg"><label>Texte Vision</label><textarea rows="2">Devenir le pôle ouest-africain de référence en formation industrielle pratique, où chaque diplômé crée de la valeur.</textarea></div>
+          <div class="fg"><label>Titre Valeurs</label><input type="text" value="Nos valeurs"></div>
+          <div class="fg"><label>Texte Valeurs</label><textarea rows="2">Rigueur technique, intégrité, esprit d'équipe et innovation : quatre piliers qui signent chaque projet étudiant.</textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONTACT & ADMISSION ===== -->
+<div class="panel" id="panel-contact">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Contact & Admission</h2><p class="text-muted">Modifiez les informations de contact et le processus d'admission.</p></div>
+    <button class="h-btn h-btn-blue" onclick="toast('Infos contact sauvegardées !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><h3>📍 Coordonnées</h3></div>
+        <div class="card-body">
+          <div class="fg mb16"><label>Adresse</label><input type="text" value="Bé-Kpota, 5788+HJP, Lomé — Togo"></div>
+          <div class="fg mb16"><label>Téléphone 1</label><input type="tel" value="+228 90 97 56 48"></div>
+          <div class="fg mb16"><label>Téléphone 2</label><input type="tel" value="+228 98 50 17 50"></div>
+          <div class="fg mb16"><label>Email de contact</label><input type="email" value="contact@ifgi.tg"></div>
+          <div class="fg mb16"><label>Horaires</label><textarea rows="2">Lun — Ven : 8h00 - 18h00
+Samedi : sur rendez-vous</textarea></div>
+          <div class="fg"><label>Lien Google Maps</label><input type="url" value="https://maps.google.com/?q=Be-Kpota+Lome+Togo" placeholder="URL Google Maps"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📱 Réseaux sociaux</h3></div>
+        <div class="card-body">
+          <div class="fg mb16"><label>Facebook</label><input type="url" placeholder="https://facebook.com/ifgi.tg"></div>
+          <div class="fg mb16"><label>WhatsApp Business</label><input type="tel" placeholder="+228 XX XX XX XX"></div>
+          <div class="fg mb16"><label>LinkedIn</label><input type="url" placeholder="https://linkedin.com/company/ifgi"></div>
+          <div class="fg"><label>YouTube</label><input type="url" placeholder="https://youtube.com/@ifgi"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><h3>🎓 Processus d'admission</h3></div>
+        <div class="card-body" id="admissionSteps">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:28px;height:28px;border-radius:9px;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:13px;flex-shrink:0">1</div>
+              <div style="flex:1">
+                <div class="form-grid" style="margin-bottom:0">
+                  <input type="text" value="Retrait du dossier" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:700">
+                  <input type="text" value="Dès juin" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+                  <div class="fg span2"><textarea rows="2" style="font-size:12.5px">Dossier retiré au secrétariat de Bé-Kpota ou demandé en ligne. Aucun frais n'est exigé au retrait.</textarea></div>
+                </div>
+              </div>
+              <button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:28px;height:28px;border-radius:9px;background:var(--orange);color:#fff;display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:13px;flex-shrink:0">2</div>
+              <div style="flex:1">
+                <div class="form-grid" style="margin-bottom:0">
+                  <input type="text" value="Dépôt & test d'orientation" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:700">
+                  <input type="text" value="Juillet" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+                  <div class="fg span2"><textarea rows="2" style="font-size:12.5px">Évaluation en mathématiques, sciences et logique technique pour identifier la filière la plus adaptée.</textarea></div>
+                </div>
+              </div>
+              <button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:28px;height:28px;border-radius:9px;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:13px;flex-shrink:0">3</div>
+              <div style="flex:1">
+                <div class="form-grid" style="margin-bottom:0">
+                  <input type="text" value="Entretien & visite des ateliers" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:700">
+                  <input type="text" value="Août" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+                  <div class="fg span2"><textarea rows="2" style="font-size:12.5px">Échange sur votre projet professionnel, visite guidée des ateliers et confirmation du choix de filière.</textarea></div>
+                </div>
+              </div>
+              <button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:28px;height:28px;border-radius:9px;background:var(--orange);color:#fff;display:grid;place-items:center;font-family:'Sora';font-weight:800;font-size:13px;flex-shrink:0">4</div>
+              <div style="flex:1">
+                <div class="form-grid" style="margin-bottom:0">
+                  <input type="text" value="Affectation & rentrée" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:700">
+                  <input type="text" value="Septembre" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+                  <div class="fg span2"><textarea rows="2" style="font-size:12.5px">Inscription définitive, remise de la carte étudiante et affectation au groupe de travaux pratiques.</textarea></div>
+                </div>
+              </div>
+              <button class="act-btn del" onclick="confirmDelete('cette étape')"><svg class="ico16"><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+          <button class="h-btn h-btn-ghost mt16" onclick="toast('Étape ajoutée','success')"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter une étape</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📋 Pièces à fournir</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:8px" id="piecesList">
+            <div class="flex-row"><input type="text" value="Photocopie de l'acte de naissance" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+            <div class="flex-row"><input type="text" value="Bulletins des deux dernières années" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+            <div class="flex-row"><input type="text" value="Copie du BEPC (BT) ou du Bac/BT (BTS)" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+            <div class="flex-row"><input type="text" value="Quatre photos d'identité récentes" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+            <div class="flex-row"><input type="text" value="Fiche de renseignement complétée" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button></div>
+          </div>
+          <button class="h-btn h-btn-ghost mt16" onclick="addPiece()"><svg class="ico16"><use href="#i-plus"/></svg> Ajouter une pièce</button>
+          <div class="sep"></div>
+          <div class="fg"><label>Date limite de dépôt</label><input type="text" value="30 septembre 2026, dans la limite des places par filière."></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PARAMÈTRES ===== -->
+<div class="panel" id="panel-settings">
+  <div class="flex-row between mb24">
+    <div><h2 class="section-title" style="margin-bottom:4px">Paramètres du site</h2><p class="text-muted">Configuration globale de l'IFGI.</p></div>
+    <button class="h-btn h-btn-blue" onclick="toast('Paramètres sauvegardés !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><h3>🏫 Infos générales</h3></div>
+        <div class="card-body">
+          <div class="fg mb16"><label>Nom de l'établissement</label><input type="text" value="IFGI — Institut de Formation des Génies Industriels"></div>
+          <div class="fg mb16"><label>Acronyme</label><input type="text" value="IFGI"></div>
+          <div class="fg mb16"><label>Slogan</label><input type="text" value="Formez les Génies de Demain"></div>
+          <div class="fg mb16"><label>Sous-titre de la marque</label><input type="text" value="Génies Industriels"></div>
+          <div class="fg mb16"><label>Titre de l'onglet (balise &lt;title&gt;)</label><input type="text" value="IFGI — Institut de Formation des Génies Industriels | Lomé, Togo"></div>
+          <div class="fg"><label>Méta-description SEO</label><textarea rows="2">IFGI Lomé : lycée technique industriel. Mécanique, Électronique, Électricité, Génie Civil, BT, BTS. Formez les Génies de Demain.</textarea></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🎨 Couleurs du site</h3></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="fg"><label>Bleu principal</label><input type="color" value="#0f62ac" style="width:100%;height:40px;border-radius:8px;border:1.5px solid var(--line);cursor:pointer"></div>
+            <div class="fg"><label>Orange accent</label><input type="color" value="#f97e0d" style="width:100%;height:40px;border-radius:8px;border:1.5px solid var(--line);cursor:pointer"></div>
+            <div class="fg"><label>Bleu foncé</label><input type="color" value="#0e3a63" style="width:100%;height:40px;border-radius:8px;border:1.5px solid var(--line);cursor:pointer"></div>
+            <div class="fg"><label>Fond général</label><input type="color" value="#f4f7fb" style="width:100%;height:40px;border-radius:8px;border:1.5px solid var(--line);cursor:pointer"></div>
+          </div>
+          <button class="h-btn h-btn-ghost mt16" onclick="toast('Couleurs réinitialisées','')">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><h3>🔐 Accès administrateur</h3></div>
+        <div class="card-body">
+          <div class="fg mb16"><label>Nom d'utilisateur admin</label><input type="text" value="admin@ifgi.tg"></div>
+          <div class="fg mb16"><label>Nouveau mot de passe</label><input type="password" placeholder="Laisser vide pour conserver l'actuel"></div>
+          <div class="fg"><label>Confirmer le mot de passe</label><input type="password" placeholder="Confirmer"></div>
+          <button class="h-btn h-btn-blue mt16" onclick="toast('Mot de passe mis à jour !','success')">Mettre à jour</button>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div class="card-header"><h3>⚙️ Options d'affichage</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="flex-row between"><span class="fw7">Mode maintenance</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+            <div class="flex-row between"><span class="fw7">Afficher la newsletter</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="flex-row between"><span class="fw7">Galerie active</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="flex-row between"><span class="fw7">Blog / Actualités actif</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="flex-row between"><span class="fw7">Formulaire d'inscription actif</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="flex-row between"><span class="fw7">FAQ visible</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📦 Export / Sauvegarde</h3></div>
+        <div class="card-body">
+          <p class="text-muted mb16" style="font-size:13px">Exportez la configuration complète du site pour sauvegarde ou transfert.</p>
+          <div class="flex-row" style="gap:10px;flex-wrap:wrap">
+            <button class="h-btn h-btn-ghost" onclick="toast('Configuration exportée (JSON)','success')"><svg class="ico16"><use href="#i-upload"/></svg> Exporter JSON</button>
+            <button class="h-btn h-btn-ghost" onclick="toast('Import réussi !','success')"><svg class="ico16"><use href="#i-upload"/></svg> Importer JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Modal : Ajouter à la galerie -->
+<div class="modal-overlay" id="modalAddGal">
+  <div class="modal">
+    <div class="modal-head"><h3>➕ Ajouter à la galerie</h3><button class="modal-close" onclick="closeModal('modalAddGal')">✕</button></div>
+    <div class="modal-body">
+      <div class="tabs" style="margin-bottom:16px">
+        <button class="tab-btn active" data-tab="tab-add-photo">📷 Photo</button>
+        <button class="tab-btn" data-tab="tab-add-video">🎬 Vidéo</button>
+      </div>
+      <div class="tab-pane active" id="tab-add-photo">
+        <div class="upload-zone" onclick="document.getElementById('galPhotoInput').click()" id="galUploadZone">
+          <input type="file" id="galPhotoInput" accept="image/*,video/*" multiple onchange="previewGalFiles(this)">
+          <div class="uz-icon">🖼️</div>
+          <b>Glissez des images ici ou cliquez pour parcourir</b>
+          <p>JPEG, PNG, WebP — Plusieurs fichiers acceptés</p>
+        </div>
+        <div class="preview-imgs" id="galPreviews"></div>
+        <div class="form-grid mt16">
+          <div class="fg"><label>Catégorie</label><select><option>Campus</option><option>Ateliers</option><option>Laboratoires</option><option>Événements</option></select></div>
+          <div class="fg"><label>Titre</label><input type="text" placeholder="Titre de l'élément"></div>
+          <div class="fg span2"><label>Description</label><textarea placeholder="Description courte…" rows="2"></textarea></div>
+        </div>
+      </div>
+      <div class="tab-pane" id="tab-add-video">
+        <div class="form-grid one">
+          <div class="fg"><label>URL YouTube ou Vimeo</label><input type="url" placeholder="https://www.youtube.com/watch?v=..."></div>
+          <div class="fg"><label>Titre</label><input type="text" placeholder="Titre de la vidéo"></div>
+          <div class="fg"><label>Catégorie</label><select><option>Campus</option><option>Ateliers</option><option>Événements</option></select></div>
+          <div class="fg"><label>Description</label><textarea placeholder="Description…" rows="2"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalAddGal')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalAddGal');toast('Élément ajouté à la galerie !','success')"><svg class="ico16"><use href="#i-check"/></svg> Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Modifier un élément galerie -->
+<div class="modal-overlay" id="modalEditGal">
+  <div class="modal">
+    <div class="modal-head"><h3>✏️ Modifier l'élément</h3><button class="modal-close" onclick="closeModal('modalEditGal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Titre</label><input type="text" id="editGalTitle"></div>
+        <div class="fg"><label>Catégorie</label><select id="editGalCat"><option>Campus</option><option>Ateliers</option><option>Laboratoires</option><option>Événements</option></select></div>
+        <div class="fg span2"><label>Description</label><textarea id="editGalDesc" rows="2"></textarea></div>
+        <div class="fg span2"><label>Remplacer l'image</label>
+          <div class="upload-zone" style="padding:16px" onclick="document.getElementById('editGalImg').click()">
+            <input type="file" id="editGalImg" accept="image/*">
+            <b>Changer l'image</b><p>JPEG, PNG, WebP</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalEditGal')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalEditGal');toast('Élément modifié !','success')"><svg class="ico16"><use href="#i-check"/></svg> Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Ajouter une vidéo -->
+<div class="modal-overlay" id="modalAddVideo">
+  <div class="modal sm">
+    <div class="modal-head"><h3>🎬 Ajouter une vidéo</h3><button class="modal-close" onclick="closeModal('modalAddVideo')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg mb16"><label>Titre</label><input type="text" placeholder="Titre de la vidéo"></div>
+      <div class="fg mb16"><label>Plateforme</label><select><option>YouTube</option><option>Vimeo</option></select></div>
+      <div class="fg mb16"><label>ID ou URL complète</label><input type="text" placeholder="ID YouTube ou URL complète"></div>
+      <div class="fg mb16"><label>Utilisé dans</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+          <label class="flex-row" style="gap:6px;cursor:pointer"><input type="checkbox" checked> Accueil</label>
+          <label class="flex-row" style="gap:6px;cursor:pointer"><input type="checkbox"> Galerie</label>
+          <label class="flex-row" style="gap:6px;cursor:pointer"><input type="checkbox"> À propos</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalAddVideo')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalAddVideo');toast('Vidéo ajoutée !','success')">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Ajouter acteur -->
+<div class="modal-overlay" id="modalAddActeur">
+  <div class="modal">
+    <div class="modal-head"><h3>👤 Ajouter un acteur</h3><button class="modal-close" onclick="closeModal('modalAddActeur')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg span2" style="text-align:center">
+          <div style="width:80px;height:80px;border-radius:20px;background:var(--blue);display:grid;place-items:center;margin:0 auto 12px;font-size:28px;font-weight:800;font-family:'Sora';color:#fff">?</div>
+          <div class="upload-zone" style="padding:12px" onclick="document.getElementById('acteurPhoto').click()">
+            <input type="file" id="acteurPhoto" accept="image/*">
+            <b>Photo de profil</b><p>JPEG, PNG — carré recommandé</p>
+          </div>
+        </div>
+        <div class="fg"><label>Prénom & Nom</label><input type="text" placeholder="Ex: Koami ADJIVA"></div>
+        <div class="fg"><label>Rôle / Fonction</label><input type="text" placeholder="Ex: Fondateur & Directeur"></div>
+        <div class="fg span2"><label>Bio / Témoignage</label><textarea rows="3" placeholder="Courte biographie ou témoignage…"></textarea></div>
+        <div class="fg"><label>Initiales (si pas de photo)</label><input type="text" placeholder="Ex: KA" maxlength="2"></div>
+        <div class="fg"><label>Couleur de l'avatar</label>
+          <div class="color-row">
+            <div class="color-swatch active" style="background:linear-gradient(135deg,var(--blue),#3f8bd4)" onclick="selectSwatch(this)"></div>
+            <div class="color-swatch" style="background:linear-gradient(135deg,var(--orange),#ffa64d)" onclick="selectSwatch(this)"></div>
+            <div class="color-swatch" style="background:linear-gradient(135deg,#2d6a4f,#52b788)" onclick="selectSwatch(this)"></div>
+            <div class="color-swatch" style="background:linear-gradient(135deg,#9b2226,#e9c46a)" onclick="selectSwatch(this)"></div>
+            <div class="color-swatch" style="background:linear-gradient(135deg,#4a4e69,#9a8c98)" onclick="selectSwatch(this)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalAddActeur')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalAddActeur');toast('Acteur ajouté !','success')">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Modifier acteur -->
+<div class="modal-overlay" id="modalEditActeur">
+  <div class="modal">
+    <div class="modal-head"><h3>✏️ Modifier un acteur</h3><button class="modal-close" onclick="closeModal('modalEditActeur')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg span2" style="text-align:center">
+          <div style="width:80px;height:80px;border-radius:20px;background:var(--blue);display:grid;place-items:center;margin:0 auto 12px;font-size:28px;font-weight:800;font-family:'Sora';color:#fff">KA</div>
+          <div class="upload-zone" style="padding:12px" onclick="document.getElementById('editActeurPhoto').click()">
+            <input type="file" id="editActeurPhoto" accept="image/*">
+            <b>Changer la photo</b>
+          </div>
+        </div>
+        <div class="fg"><label>Prénom & Nom</label><input type="text" value="K. ADJIVA"></div>
+        <div class="fg"><label>Rôle / Fonction</label><input type="text" value="Fondateur & Directeur Général"></div>
+        <div class="fg span2"><label>Bio</label><textarea rows="3">Ingénieur formé sur les chantiers, fondateur de l'IFGI. Vision : donner au Togo des techniciens que l'industrie n'a pas à reformer.</textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalEditActeur')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalEditActeur');toast('Profil mis à jour !','success')">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Ajouter filière -->
+<div class="modal-overlay" id="modalAddFiliere">
+  <div class="modal sm">
+    <div class="modal-head"><h3>➕ Ajouter une filière</h3><button class="modal-close" onclick="closeModal('modalAddFiliere')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg mb16"><label>Code filière</label><input type="text" placeholder="Ex: F5 • BT / BTS"></div>
+      <div class="fg mb16"><label>Nom de la filière</label><input type="text" placeholder="Ex: Maintenance industrielle"></div>
+      <div class="fg mb16"><label>Description</label><textarea rows="3" placeholder="Décrivez brièvement la filière…"></textarea></div>
+      <div class="fg mb16"><label>Tags (séparés par virgule)</label><input type="text" placeholder="BT, BTS, CAP"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalAddFiliere')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="closeModal('modalAddFiliere');toast('Filière ajoutée !','success')">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Insérer image dans éditeur -->
+<div class="modal-overlay" id="modalInsertImg">
+  <div class="modal sm">
+    <div class="modal-head"><h3>🖼️ Insérer une image</h3><button class="modal-close" onclick="closeModal('modalInsertImg')">✕</button></div>
+    <div class="modal-body">
+      <div class="tabs" style="margin-bottom:12px">
+        <button class="tab-btn active" data-tab="tab-img-upload">Fichier</button>
+        <button class="tab-btn" data-tab="tab-img-url">URL</button>
+      </div>
+      <div class="tab-pane active" id="tab-img-upload">
+        <div class="upload-zone" onclick="document.getElementById('editorImgInput').click()">
+          <input type="file" id="editorImgInput" accept="image/*" onchange="previewInsertImg(this)">
+          <div class="uz-icon">🖼️</div>
+          <b>Choisir une image</b><p>JPEG, PNG, WebP</p>
+        </div>
+        <img id="insertImgPreview" style="display:none;width:100%;border-radius:10px;margin-top:12px;max-height:160px;object-fit:cover">
+      </div>
+      <div class="tab-pane" id="tab-img-url">
+        <div class="fg"><label>URL de l'image</label><input type="url" id="insertImgUrl" placeholder="https://..."></div>
+      </div>
+      <div class="form-grid mt16">
+        <div class="fg"><label>Texte alternatif</label><input type="text" id="insertImgAlt" placeholder="Description de l'image"></div>
+        <div class="fg"><label>Largeur</label><input type="text" id="insertImgWidth" placeholder="100% ou 400px"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalInsertImg')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="doInsertImage()">Insérer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Insérer vidéo dans éditeur -->
+<div class="modal-overlay" id="modalInsertVideo">
+  <div class="modal sm">
+    <div class="modal-head"><h3>🎬 Insérer une vidéo YouTube</h3><button class="modal-close" onclick="closeModal('modalInsertVideo')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg mb16"><label>URL YouTube</label><input type="url" id="insertVideoUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="form-grid">
+        <div class="fg"><label>Largeur</label><input type="text" id="insertVideoW" value="100%" placeholder="100%"></div>
+        <div class="fg"><label>Hauteur</label><input type="text" id="insertVideoH" value="315" placeholder="315px"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalInsertVideo')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="doInsertVideo()">Insérer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Insérer lien -->
+<div class="modal-overlay" id="modalInsertLink">
+  <div class="modal sm">
+    <div class="modal-head"><h3>🔗 Insérer un lien</h3><button class="modal-close" onclick="closeModal('modalInsertLink')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg mb16"><label>Texte du lien</label><input type="text" id="linkText" placeholder="Texte affiché"></div>
+      <div class="fg mb16"><label>URL</label><input type="url" id="linkUrl" placeholder="https://..."></div>
+      <div class="fg"><label>Ouverture</label><select id="linkTarget"><option value="_self">Même onglet</option><option value="_blank">Nouvel onglet</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalInsertLink')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="doInsertLink()">Insérer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Insérer tableau -->
+<div class="modal-overlay" id="modalInsertTable">
+  <div class="modal sm">
+    <div class="modal-head"><h3>📊 Insérer un tableau</h3><button class="modal-close" onclick="closeModal('modalInsertTable')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Lignes</label><input type="number" id="tableRows" value="3" min="1" max="20"></div>
+        <div class="fg"><label>Colonnes</label><input type="number" id="tableCols" value="3" min="1" max="10"></div>
+        <div class="fg span2"><label>En-tête</label><label class="flex-row" style="gap:8px;cursor:pointer;margin-top:4px"><input type="checkbox" id="tableHeader" checked> Inclure une ligne d'en-tête</label></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="h-btn h-btn-ghost" onclick="closeModal('modalInsertTable')">Annuler</button>
+      <button class="h-btn h-btn-blue" onclick="doInsertTable()">Insérer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Confirmer suppression -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal sm">
+    <div class="modal-body" style="padding:32px">
+      <div class="confirm-dialog">
+        <div class="cd-icon">⚠️</div>
+        <h3>Confirmer la suppression</h3>
+        <p id="confirmMsg">Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.</p>
+        <div class="flex-row" style="justify-content:center;gap:12px">
+          <button class="h-btn h-btn-ghost" onclick="closeModal('modalConfirm')">Annuler</button>
+          <button class="h-btn h-btn-danger" onclick="closeModal('modalConfirm');toast('Élément supprimé.','error')"><svg class="ico16"><use href="#i-trash"/></svg> Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div id="toast-stack"></div>
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+(function(){
+'use strict';
+
+// ===== SIDEBAR TOGGLE =====
+var sidebar=document.getElementById('sidebar');
+var header=document.getElementById('header');
+var content=document.getElementById('content');
+var collapsed=false;
+
+document.getElementById('sidebarToggle').addEventListener('click',function(){
+  collapsed=!collapsed;
+  sidebar.classList.toggle('collapsed',collapsed);
+  header.classList.toggle('wide',collapsed);
+  content.classList.toggle('wide',collapsed);
+});
+
+// ===== NAVIGATION =====
+var panels=document.querySelectorAll('.panel');
+var navItems=document.querySelectorAll('.nav-item[data-panel]');
+var breadcrumbs={
+  'dashboard':'Tableau de bord',
+  'actualites':'Actualités & Blog',
+  'galerie':'Galerie',
+  'videos':'Vidéos',
+  'page-accueil':'Page Accueil',
+  'filieres':'Filières',
+  'acteurs':'Acteurs & Équipe',
+  'apropos':'À propos',
+  'contact':'Contact & Admission',
+  'settings':'Paramètres'
+};
+
+function switchPanel(id){
+  panels.forEach(function(p){p.classList.remove('active')});
+  navItems.forEach(function(n){n.classList.remove('active')});
+  var panel=document.getElementById('panel-'+id);
+  if(panel){panel.classList.add('active')}
+  var nav=document.querySelector('.nav-item[data-panel="'+id+'"]');
+  if(nav){nav.classList.add('active')}
+  document.getElementById('breadcrumb').textContent=breadcrumbs[id]||id;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+window.switchPanel=switchPanel;
+
+navItems.forEach(function(item){
+  item.addEventListener('click',function(){
+    var p=item.getAttribute('data-panel');
+    if(p==='logout'){confirmLogout();return}
+    switchPanel(p);
+  });
+});
+
+function confirmLogout(){
+  if(confirm('Déconnecter l\'administrateur ?')){
+    toast('Déconnexion réussie.','');
+  }
+}
+
+// ===== TABS =====
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var target=btn.getAttribute('data-tab');
+    if(!target)return;
+    var container=btn.closest('.tabs').nextElementSibling;
+    var allPanes=btn.closest('.panel, .modal-body, #panel-actualites').querySelectorAll('.tab-pane');
+    var allBtns=btn.closest('.tabs').querySelectorAll('.tab-btn');
+    allBtns.forEach(function(b){b.classList.remove('active')});
+    allPanes.forEach(function(p){p.classList.remove('active')});
+    btn.classList.add('active');
+    var pane=document.getElementById(target);
+    if(pane)pane.classList.add('active');
+  });
+});
+
+// ===== BLOCK TOGGLE =====
+window.toggleBlock=function(head){
+  var body=head.nextElementSibling;
+  body.classList.toggle('open');
+};
+
+// ===== MODALS =====
+window.openModal=function(id){
+  var m=document.getElementById(id);
+  if(m){m.classList.add('open')}
+};
+window.closeModal=function(id){
+  var m=document.getElementById(id);
+  if(m){m.classList.remove('open')}
+};
+document.querySelectorAll('.modal-overlay').forEach(function(ov){
+  ov.addEventListener('click',function(e){
+    if(e.target===ov)ov.classList.remove('open');
+  });
+});
+
+// ===== TOAST =====
+window.toast=function(msg,type){
+  var stack=document.getElementById('toast-stack');
+  var t=document.createElement('div');
+  t.className='toast-msg'+(type?' '+type:'');
+  var icon=type==='success'?'✅':type==='error'?'🗑️':type==='warn'?'⚠️':'ℹ️';
+  t.innerHTML=icon+' <span>'+msg+'</span>';
+  stack.appendChild(t);
+  setTimeout(function(){
+    t.style.animation='toastOut .3s ease forwards';
+    setTimeout(function(){t.remove()},300);
+  },3200);
+};
+
+// ===== CONFIRM DELETE =====
+window.confirmDelete=function(label){
+  document.getElementById('confirmMsg').textContent='Êtes-vous sûr de vouloir supprimer '+label+' ? Cette action est irréversible.';
+  openModal('modalConfirm');
+};
+
+// ===== ARTICLE EDITOR =====
+var articles=[
+  {title:'Journée portes ouvertes 2026 : un succès record à Bé-Kpota',desc:'Plus de 900 visiteurs, collégiens, parents et recruteurs ont découvert nos 18 ateliers et laboratoires.',cat:'Événement',date:'2026-10-28',content:'<p>Plus de <strong>900 visiteurs</strong> — collégiens, parents et recruteurs — ont découvert nos 18 ateliers et laboratoires lors de cette journée exceptionnelle.</p><p>Six conventions de stage ont été signées en direct avec des entreprises partenaires.</p>'},
+  {title:'Les BTS Génie Civil remportent le concours national BTP',desc:'Face à 14 écoles, notre équipe a présenté une passerelle métallique optimisée par calcul numérique.',cat:'Concours',date:'2026-10-28',content:'<p>Face à <strong>14 écoles</strong> concurrentes, notre équipe BTS Génie Civil a brillamment remporté le concours national BTP.</p>'},
+  {title:'Nouveau laboratoire d\'électronique équipé',desc:'30 postes, bancs automatisés et un espace prototypage complet avec impression 3D.',cat:'Infrastructures',date:'2026-10-05',content:'<p>Grâce à nos partenaires industriels, notre nouveau laboratoire d\'électronique compte désormais <strong>30 postes</strong> équipés des dernières technologies.</p>'},
+  {title:'Rentrée académique 2026-2027',desc:'Cap sur l\'innovation : ouverture d\'une option énergies renouvelables.',cat:'Vie scolaire',date:'2026-09-15',content:'<p>Le Directeur a prononcé un discours ambitieux pour la rentrée <strong>2026-2027</strong>, annonçant l\'ouverture d\'une nouvelle option énergies renouvelables.</p>'},
+  {title:'Stage en entreprise : 80 étudiants placés',desc:'Répartition dans les secteurs BTP, énergie, télécoms et maintenance industrielle.',cat:'Formations',date:'2026-08-22',content:'<p>Cette année, <strong>80 étudiants</strong> ont été placés en stage dans des entreprises de Lomé et de l\'intérieur du pays.</p>'},
+  {title:'Le robot suiveur de ligne primé à Abidjan',desc:'Le club robotique décroche le prix spécial du jury au concours ouest-africain.',cat:'Innovation',date:'2026-06-18',content:'<p>Notre club robotique a décroché le <strong>prix spécial du jury</strong> au concours ouest-africain de robotique à Abidjan.</p>'}
+];
+window.ifgiAdminArticles=articles;
+
+window.openEditArticle=function(idx){
+  var art=articles[idx];
+  document.getElementById('artTitle').value=art.title;
+  document.getElementById('artDesc').value=art.desc;
+  document.getElementById('richEditor').innerHTML=art.content;
+  updateWordCount();
+  // Switch to editor tab
+  var edTab=document.querySelector('.tab-btn[data-tab="tab-editeur"]');
+  if(edTab)edTab.click();
+};
+
+window.openNewArticle=function(){
+  document.getElementById('artTitle').value='';
+  document.getElementById('artDesc').value='';
+  document.getElementById('richEditor').innerHTML='<p>Rédigez votre article ici…</p>';
+  updateWordCount();
+  var edTab=document.querySelector('.tab-btn[data-tab="tab-editeur"]');
+  if(edTab)edTab.click();
+  // Make sure we're on the actualites panel
+  switchPanel('actualites');
+};
+
+// ===== RICH EDITOR =====
+var editor=document.getElementById('richEditor');
+var htmlEd=document.getElementById('htmlEditor');
+var htmlMode=false;
+
+window.execCmd=function(cmd,val){
+  if(htmlMode)return;
+  editor.focus();
+  document.execCommand(cmd,false,val||null);
+  updateWordCount();
+};
+
+function updateWordCount(){
+  if(!editor)return;
+  var text=editor.innerText||'';
+  var words=text.trim().split(/\s+/).filter(function(w){return w.length>0});
+  document.getElementById('wordCount').textContent=words.length+' mot'+(words.length>1?'s':'');
+}
+
+if(editor){
+  editor.addEventListener('input',updateWordCount);
+  editor.addEventListener('keydown',function(e){
+    if(e.ctrlKey||e.metaKey){
+      if(e.key==='b'){e.preventDefault();execCmd('bold')}
+      if(e.key==='i'){e.preventDefault();execCmd('italic')}
+      if(e.key==='u'){e.preventDefault();execCmd('underline')}
+      if(e.key==='z'){e.preventDefault();execCmd('undo')}
+      if(e.key==='y'){e.preventDefault();execCmd('redo')}
+    }
+  });
+}
+
+window.toggleHtmlMode=function(){
+  htmlMode=!htmlMode;
+  if(htmlMode){
+    htmlEd.value=editor.innerHTML;
+    editor.style.display='none';
+    htmlEd.style.display='block';
+    document.getElementById('editorMode').textContent='Mode : HTML';
+  } else {
+    editor.innerHTML=htmlEd.value;
+    editor.style.display='block';
+    htmlEd.style.display='none';
+    document.getElementById('editorMode').textContent='Mode : Visuel';
+    updateWordCount();
+  }
+};
+
+// ===== EMOJI PICKER =====
+var emojis=['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','🤩','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','🌟','⭐','💫','✨','🌈','☀️','🌤️','⛅','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','🌬️','💨','💧','💦','🔥','🌊','🎓','📚','✏️','📝','🏆','🥇','🏅','🎖️','🎗️','🎁','🎀','🎊','🎉','🎈','🎂','🍰','🍾','🥂','🍻','🎵','🎶','🎤','🎧','🎼','🎹','🎸','🎻','🎺','🥁','🎷','🏫','🏗️','🔧','🔩','⚙️','🔨','🛠️','⛏️','🏗️','🚀','✈️','🚁','⛵','🚂','🚗','🚌','🏍️'];
+var emojiPicker=document.getElementById('emojiPicker');
+if(emojiPicker){
+  var grid=document.createElement('div');grid.className='emoji-grid';
+  emojis.forEach(function(e){
+    var btn=document.createElement('button');btn.className='emoji-btn';btn.textContent=e;
+    btn.onclick=function(){execCmd('insertText',e);closeEmojiPicker()};
+    grid.appendChild(btn);
+  });
+  emojiPicker.appendChild(grid);
+}
+
+window.toggleEmojiPicker=function(btn){
+  emojiPicker.classList.toggle('open');
+};
+function closeEmojiPicker(){emojiPicker.classList.remove('open')}
+
+document.addEventListener('click',function(e){
+  if(emojiPicker&&!emojiPicker.contains(e.target)&&!e.target.closest('#emojiToggle')){
+    closeEmojiPicker();
+  }
+});
+
+// ===== INSERT IMAGE =====
+var savedRange=null;
+
+window.openInsertImage=function(){
+  if(window.getSelection && window.getSelection().rangeCount){
+    savedRange=window.getSelection().getRangeAt(0);
+  }
+  openModal('modalInsertImg');
+};
+
+window.previewInsertImg=function(input){
+  if(input.files&&input.files[0]){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var preview=document.getElementById('insertImgPreview');
+      preview.src=e.target.result;
+      preview.style.display='block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+};
+
+window.doInsertImage=function(){
+  var file=document.getElementById('editorImgInput').files[0];
+  var url=document.getElementById('insertImgUrl').value;
+  var alt=document.getElementById('insertImgAlt').value||'Image';
+  var width=document.getElementById('insertImgWidth').value||'100%';
+
+  if(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      insertImgToEditor(e.target.result,alt,width);
+    };
+    reader.readAsDataURL(file);
+  } else if(url){
+    insertImgToEditor(url,alt,width);
+  }
+  closeModal('modalInsertImg');
+  toast('Image insérée !','success');
+};
+
+function insertImgToEditor(src,alt,width){
+  editor.focus();
+  if(savedRange){
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+  var img='<img src="'+src+'" alt="'+alt+'" style="width:'+width+';max-width:100%;border-radius:10px;margin:8px 0">';
+  document.execCommand('insertHTML',false,img);
+  updateWordCount();
+}
+
+// ===== INSERT VIDEO =====
+window.openInsertVideo=function(){
+  if(window.getSelection&&window.getSelection().rangeCount){
+    savedRange=window.getSelection().getRangeAt(0);
+  }
+  openModal('modalInsertVideo');
+};
+
+window.doInsertVideo=function(){
+  var url=document.getElementById('insertVideoUrl').value;
+  var w=document.getElementById('insertVideoW').value||'100%';
+  var h=document.getElementById('insertVideoH').value||'315';
+  var id=extractYouTubeId(url);
+  if(!id){toast('URL YouTube invalide','error');return}
+  var html='<div style="margin:12px 0"><iframe width="'+w+'" height="'+h+'" src="https://www.youtube.com/embed/'+id+'" frameborder="0" allowfullscreen style="border-radius:10px;max-width:100%;display:block"></iframe></div>';
+  editor.focus();
+  if(savedRange){var sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange)}
+  document.execCommand('insertHTML',false,html);
+  closeModal('modalInsertVideo');
+  toast('Vidéo insérée !','success');
+  updateWordCount();
+};
+
+function extractYouTubeId(url){
+  var m=url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+
+// ===== INSERT LINK =====
+window.openInsertLink=function(){
+  if(window.getSelection&&window.getSelection().rangeCount){
+    savedRange=window.getSelection().getRangeAt(0);
+    var sel=window.getSelection();
+    if(sel.toString()){
+      document.getElementById('linkText').value=sel.toString();
+    }
+  }
+  openModal('modalInsertLink');
+};
+
+window.doInsertLink=function(){
+  var text=document.getElementById('linkText').value||'Lien';
+  var url=document.getElementById('linkUrl').value;
+  var target=document.getElementById('linkTarget').value;
+  if(!url){toast('URL requise','error');return}
+  var html='<a href="'+url+'" target="'+target+'" style="color:var(--blue);font-weight:700">'+text+'</a>';
+  editor.focus();
+  if(savedRange){var sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange)}
+  document.execCommand('insertHTML',false,html);
+  closeModal('modalInsertLink');
+  toast('Lien inséré !','success');
+};
+
+// ===== INSERT TABLE =====
+window.openInsertTable=function(){
+  if(window.getSelection&&window.getSelection().rangeCount){
+    savedRange=window.getSelection().getRangeAt(0);
+  }
+  openModal('modalInsertTable');
+};
+
+window.doInsertTable=function(){
+  var rows=parseInt(document.getElementById('tableRows').value)||3;
+  var cols=parseInt(document.getElementById('tableCols').value)||3;
+  var header=document.getElementById('tableHeader').checked;
+  var html='<table style="border-collapse:collapse;width:100%;margin:12px 0">';
+  if(header){
+    html+='<tr>';
+    for(var c=0;c<cols;c++) html+='<th style="border:1.5px solid #dbe6f2;padding:8px 12px;background:#e3eef8;font-weight:700;text-align:left">En-tête '+(c+1)+'</th>';
+    html+='</tr>';
+  }
+  for(var r=0;r<rows;r++){
+    html+='<tr>';
+    for(var c2=0;c2<cols;c2++) html+='<td style="border:1.5px solid #dbe6f2;padding:8px 12px">Cellule</td>';
+    html+='</tr>';
+  }
+  html+='</table>';
+  editor.focus();
+  if(savedRange){var sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange)}
+  document.execCommand('insertHTML',false,html);
+  closeModal('modalInsertTable');
+  toast('Tableau inséré !','success');
+};
+
+// ===== INSERT FRAME =====
+window.insertFrame=function(){
+  editor.focus();
+  var html='<div style="border:2px solid var(--blue);border-radius:14px;padding:18px;background:var(--blue-50);margin:12px 0"><p>Contenu du cadre…</p></div>';
+  document.execCommand('insertHTML',false,html);
+  toast('Cadre inséré !','success');
+};
+
+window.insertSection=function(){
+  editor.focus();
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0"><div style="padding:12px;background:#f4f7fb;border-radius:10px"><p>Colonne gauche</p></div><div style="padding:12px;background:#f4f7fb;border-radius:10px"><p>Colonne droite</p></div></div>';
+  document.execCommand('insertHTML',false,html);
+  toast('Section 2 colonnes insérée !','success');
+};
+
+// ===== BANNER PREVIEW =====
+window.previewBanner=function(input){
+  if(input.files&&input.files[0]){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var el=document.getElementById('bannerPreview');
+      el.src=e.target.result;
+      el.style.display='block';
+      document.getElementById('bannerUploadZone').style.display='none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+};
+
+// ===== GALLERY UPLOAD PREVIEW =====
+window.previewGalFiles=function(input){
+  var container=document.getElementById('galPreviews');
+  container.innerHTML='';
+  Array.from(input.files).forEach(function(file){
+    if(!file.type.startsWith('image/'))return;
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var wrap=document.createElement('div');wrap.className='preview-img';
+      var img=document.createElement('img');img.src=e.target.result;
+      var rm=document.createElement('button');rm.className='rm';rm.textContent='×';rm.onclick=function(){wrap.remove()};
+      wrap.appendChild(img);wrap.appendChild(rm);
+      container.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// ===== GALLERY EDIT =====
+window.openEditGalItem=function(btn){
+  var item=btn.closest('.gal-item');
+  document.getElementById('editGalTitle').value=item.getAttribute('data-t')||'';
+  document.getElementById('editGalDesc').value='';
+  openModal('modalEditGal');
+};
+
+// ===== FILTER ARTICLES =====
+window.filterArticles=function(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('#articlesBody tr').forEach(function(row){
+    var txt=row.textContent.toLowerCase();
+    row.style.display=txt.includes(q)?'':'none';
+  });
+};
+
+// ===== YOUTUBE PREVIEW =====
+window.previewYouTube=function(){
+  var id=document.getElementById('mainVideoId').value.trim();
+  id=extractYouTubeId(id)||id;
+  var wrap=document.getElementById('videoPreviewThumb');
+  if(id&&id.length>5){
+    wrap.innerHTML='<img src="https://img.youtube.com/vi/'+id+'/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:14px" onerror="this.style.display=\'none\'">';
+    toast('Aperçu mis à jour !','success');
+  } else {
+    toast('ID YouTube invalide','error');
+  }
+};
+
+// ===== ALUMNI =====
+window.addAlumni=function(){
+  var list=document.getElementById('alumniList');
+  var n=list.children.length+1;
+  var div=document.createElement('div');
+  div.className='alumni-card';
+  div.innerHTML='<div><span style="display:flex;flex-direction:column;gap:3px;cursor:grab"><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span><span style="width:14px;height:2px;background:var(--muted);border-radius:1px;display:block"></span></span></div><div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:10px;flex:1"><div class="alumni-av" style="background:var(--blue)">?</div><div class="fg"><label style="font-size:11px">Nom</label><input type="text" placeholder="Nom complet" style="font-size:13px;padding:6px 9px"></div><div class="fg"><label style="font-size:11px">Rôle</label><input type="text" placeholder="Rôle — filière année" style="font-size:13px;padding:6px 9px"></div><div style="grid-column:2 / span 2" class="fg"><label style="font-size:11px">Témoignage</label><textarea rows="2" placeholder="Témoignage…" style="font-size:12.5px"></textarea></div></div><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button>';
+  list.appendChild(div);
+  toast('Alumnus ajouté','success');
+};
+
+// ===== TIMELINE =====
+window.addTimelineStep=function(){
+  var tl=document.getElementById('timelineEditor');
+  var div=document.createElement('div');div.className='tl-row';
+  div.innerHTML='<div class="tl-drag-handle">⠿</div><div class="tl-fields"><input type="text" placeholder="LABEL" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:700"><input type="text" placeholder="Titre de l\'étape" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px"><textarea rows="2" placeholder="Description…" style="border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;width:100%;grid-column:span 2;resize:none"></textarea></div><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button>';
+  tl.appendChild(div);
+  toast('Étape ajoutée','success');
+};
+
+// ===== PIECES =====
+window.addPiece=function(){
+  var list=document.getElementById('piecesList');
+  var div=document.createElement('div');div.className='flex-row';
+  div.innerHTML='<input type="text" placeholder="Nouvelle pièce à fournir" style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px"><button class="act-btn del" onclick="this.parentElement.remove()"><svg class="ico16"><use href="#i-trash"/></svg></button>';
+  list.appendChild(div);
+};
+
+// ===== COLOR SWATCHES =====
+window.selectSwatch=function(el){
+  el.closest('.color-row').querySelectorAll('.color-swatch').forEach(function(s){s.classList.remove('active')});
+  el.classList.add('active');
+};
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay.open').forEach(function(m){m.classList.remove('open')});
+    closeEmojiPicker();
+  }
+});
+
+// ===== DRAG & DROP placeholder (visual) =====
+// (Full SortableJS would need CDN — using native HTML5 drag for demo)
+document.querySelectorAll('.drag-indicator').forEach(function(handle){
+  var parent=handle.closest('.filiere-card,.alumni-card,.page-block');
+  if(!parent)return;
+  parent.setAttribute('draggable','true');
+  parent.addEventListener('dragstart',function(){parent.style.opacity='.5'});
+  parent.addEventListener('dragend',function(){parent.style.opacity=''});
+});
+
+// ===== INIT =====
+toast('Bienvenue dans l\'admin IFGI 👋','success');
+
+})();
+</script>
+<div id="adminAuth" role="dialog" aria-modal="true" aria-labelledby="adminAuthTitle">
+  <form id="adminAuthForm" class="admin-auth-card">
+    <div class="admin-auth-mark">I</div>
+    <p class="admin-auth-kicker">IFGI • Espace sécurisé</p>
+    <h1 id="adminAuthTitle">Connexion administrateur</h1>
+    <p id="adminAuthIntro">Connectez-vous pour gérer le site.</p>
+    <label for="adminAuthUser">Adresse e-mail</label>
+    <input id="adminAuthUser" type="email" autocomplete="username" required value="admin@ifgi.tg">
+    <label for="adminAuthPass">Mot de passe</label>
+    <input id="adminAuthPass" type="password" autocomplete="current-password" required>
+    <p id="adminAuthError" role="alert"></p>
+    <button id="adminAuthSubmit" type="submit">Se connecter</button>
+    <small>Première visite ? Créez votre accès avec un mot de passe personnel.</small>
+  </form>
+</div>
+<script src="ifgi-admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "id": "./IFGI_site_v2%20(1).html",
+  "name": "IFGI — Institut de Formation des Génies Industriels",
+  "short_name": "IFGI",
+  "description": "Formations techniques industrielles à Lomé, Togo.",
+  "lang": "fr-TG",
+  "start_url": "./IFGI_site_v2%20(1).html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0e3a63",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
